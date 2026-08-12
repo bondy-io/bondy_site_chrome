@@ -1,0 +1,203 @@
+/* ============================================================
+   @bondy/site-chrome — the shared Bondy chrome.
+
+   Carries the palette, the top bar and the footer. It deliberately
+   does NOT carry page-level design (heroes, bands, feature grids):
+   those stay with the site that uses them.
+
+   Palette tokens are declared on :root rather than on a wrapper
+   class, so page CSS that already consumes --paper/--ink/--blue
+   keeps working without being rewritten or re-nested.
+   ============================================================ */
+
+:root {
+  --paper: #f1efec;
+  --paper-2: #e8e5e1;
+  --ink: #0b0b0c;
+  --ink-2: #4a4a4e;
+  --ink-3: #87847f;
+  --acc-l: #14705f;
+  --acc-d: #5fd6b4;
+  --blue: var(--acc-l);
+  --blue-ink: #f1efec;
+  --plate: #0d2f28;
+  --soft: rgba(20, 112, 95, 0.16);
+  --line: #c9c5bf;
+  --line-2: #dcd8d2;
+  --f: 'Inter', system-ui, -apple-system, sans-serif;
+  --m: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+html.dark {
+  --paper: #0c0d0e;
+  --paper-2: #16181a;
+  --ink: #eeece8;
+  --ink-2: #a6a49f;
+  --ink-3: #6f6d69;
+  --line: #2a2c2e;
+  --line-2: #1d1f21;
+  --blue: var(--acc-d);
+}
+
+/* ── chrome shell ─────────────────────────────────────────── */
+.bondy-chrome {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.bondy-chrome *{ margin: 0; padding: 0; box-sizing: border-box; }
+.bondy-chrome a { color: inherit; text-decoration: none; }
+.bondy-chrome a:hover { color: var(--blue); }
+.bondy-chrome .wrap { max-width: 1320px; margin: 0 auto; padding: 0 40px; }
+
+/* The wordmark inherits the surrounding ink via fill="currentColor", which
+   is what removed the old .blogo-dark/.blogo-light image swap. */
+.bondy-chrome .lg { display: block; flex: none; color: var(--ink); }
+.bondy-chrome .lg:hover { color: var(--ink); }
+.bondy-chrome .bondy-wordmark { height: 100%; width: auto; display: block; }
+
+/* ── nav ──────────────────────────────────────────────────── */
+.chrome-nav--sticky { position: sticky; top: 0; z-index: 80; }
+/* Docs layout: this bar stands in for VitePress's VPNav entirely. Below
+   960px VPNav is `position: relative` and scrolls away, so matching that
+   keeps the content offset correct without inventing one. */
+.chrome-nav--docs { position: relative; z-index: 60; }
+@media (min-width: 960px) {
+  .chrome-nav--docs { position: fixed; top: 0; left: 0; right: 0; }
+}
+
+.chrome-nav .top { background: var(--paper); border-bottom: 1px solid var(--line); }
+.chrome-nav .top > .wrap { display: flex; align-items: center; gap: 32px; height: 64px; }
+.chrome-nav .lg { height: 40.5px; }
+
+.chrome-nav nav.primary { display: flex; gap: 26px; font-size: 14px; color: var(--ink-2); }
+.chrome-nav nav.primary a { white-space: nowrap; }
+.chrome-nav nav.primary a.on { color: var(--ink); }
+
+.chrome-nav .r {
+  margin-left: auto; display: flex; align-items: center;
+  gap: 20px; font-size: 14px; color: var(--ink-2);
+}
+
+.chrome-nav .tbtn {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 50%;
+  background: none; color: var(--ink-2); cursor: pointer; transition: 0.15s; flex: none;
+}
+.chrome-nav .tbtn:hover { border-color: var(--ink); color: var(--ink); }
+.chrome-nav .tbtn svg { width: 15px; height: 15px; }
+.chrome-nav .tbtn .moon { display: none; }
+html.dark .chrome-nav .tbtn .moon { display: block; }
+html.dark .chrome-nav .tbtn .sun { display: none; }
+
+.bondy-chrome .pill {
+  display: inline-block; background: var(--blue); color: var(--blue-ink);
+  font-size: 13.5px; font-weight: 500; padding: 8px 20px; border-radius: 100px;
+  transition: opacity 0.15s; white-space: nowrap;
+}
+.bondy-chrome .pill:hover { opacity: 0.85; color: var(--blue-ink); }
+.bondy-chrome .pill.ghost { background: none; color: var(--ink); border: 1px solid var(--line); }
+.bondy-chrome .pill.ghost:hover { border-color: var(--ink); color: var(--ink); }
+
+/* ── secondary row ────────────────────────────────────────── */
+.chrome-nav .subbar {
+  background: var(--paper);
+  border-top: 1px solid var(--line-2);
+  border-bottom: 1px solid var(--line);
+}
+.chrome-nav .subbar .wrap { display: flex; align-items: center; gap: 24px; height: 42px; }
+.chrome-nav .subbar nav { display: flex; gap: 22px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.chrome-nav .subbar nav::-webkit-scrollbar { display: none; }
+.chrome-nav .subbar nav a,
+.chrome-nav .subbar .mono {
+  font-family: var(--m); font-size: 10.5px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-3); white-space: nowrap;
+}
+.chrome-nav .subbar nav a:hover { color: var(--blue); }
+
+/* ── burger + panel ───────────────────────────────────────── */
+.chrome-nav .mbtn {
+  display: none; flex-direction: column; justify-content: center; gap: 4px;
+  width: 32px; height: 32px; background: none; border: 0; cursor: pointer; padding: 0;
+}
+.chrome-nav .mbtn span { display: block; height: 1.5px; width: 18px; background: var(--ink-2); }
+.chrome-nav .mmenu {
+  display: none; position: absolute; top: 100%; left: 0; right: 0;
+  background: var(--paper); border-bottom: 1px solid var(--line);
+  box-shadow: 0 22px 40px rgba(0, 0, 0, 0.12);
+  opacity: 0; pointer-events: none; transform: translateY(-6px);
+  transition: opacity 0.18s, transform 0.18s;
+}
+.chrome-nav .mmenu.open { opacity: 1; pointer-events: auto; transform: none; }
+.chrome-nav .mmenu .wrap { padding-top: 10px; padding-bottom: 22px; }
+.chrome-nav .mmenu .mm-primary { display: flex; flex-direction: column; }
+.chrome-nav .mmenu .mm-primary a {
+  font-size: 16px; padding: 13px 0;
+  border-bottom: 1px solid var(--line-2); color: var(--ink-2);
+}
+.chrome-nav .mmenu .mm-primary a.on { color: var(--ink); font-weight: 500; }
+.chrome-nav .mmenu .mm-sub { display: flex; flex-wrap: wrap; gap: 10px 20px; padding: 18px 0 4px; }
+.chrome-nav .mmenu .mm-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line-2);
+  font-size: 14px; color: var(--ink-2);
+}
+
+@media (max-width: 999px) {
+  .chrome-nav nav.primary,
+  .chrome-nav .ghlink,
+  .chrome-nav .subbar { display: none; }
+  .chrome-nav .mbtn { display: flex; }
+  .chrome-nav .mmenu { display: block; }
+  .chrome-nav .r { gap: 14px; }
+  .bondy-chrome .wrap { padding: 0 22px; }
+}
+
+/* ── footer ───────────────────────────────────────────────── */
+.chrome-foot .tfoot { border-top: 1px solid var(--line); padding: 66px 0 34px; }
+.chrome-foot .fgrid { display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 40px; }
+.chrome-foot .fgrid h5 {
+  font-family: var(--m); font-size: 10.5px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 18px; font-weight: 400;
+}
+.chrome-foot .fgrid ul {
+  list-style: none; display: flex; flex-direction: column; gap: 9px;
+  font-size: 14px; color: var(--ink-2); margin: 0; padding: 0;
+}
+.chrome-foot .fb .lg { height: 28px; margin-bottom: 18px; }
+.chrome-foot .fb p { font-size: 14px; color: var(--ink-2); max-width: 34ch; line-height: 1.5; }
+.chrome-foot .fbot {
+  display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+  margin-top: 60px; padding-top: 22px; border-top: 1px solid var(--line-2);
+  font-family: var(--m); font-size: 10.5px; letter-spacing: 0.06em; color: var(--ink-3);
+}
+@media (max-width: 860px) {
+  .chrome-foot .fgrid { grid-template-columns: 1fr 1fr; gap: 34px; }
+}
+
+/* ── VitePress integration (layout="docs") ────────────────── */
+/* The bar replaces VPNav, so its height must be declared as --vp-nav-height
+   or every VitePress offset (sidebar, content, local nav) is wrong. 64px bar,
+   plus 42px when a subbar slot is filled. :has() reads that off the rendered
+   chrome so a docs site never has to hand-maintain the number. */
+@media (min-width: 960px) {
+  :root:has(.chrome-nav--docs) { --vp-nav-height: 64px; }
+  :root:has(.chrome-nav--docs .subbar) { --vp-nav-height: 106px; }
+}
+:root:has(.chrome-nav--docs) .VPNav { display: none; }
+/* The sidebar must sit above the fixed bar's shadow. */
+:root:has(.chrome-nav--docs) .VPSidebar { z-index: 50; }
+
+/* A docs footer is a sibling of VitePress's Layout, not inside its content
+   column, so it clears the sidebar the same way the content does. */
+@media (min-width: 960px) {
+  .chrome-foot--docs { padding-left: var(--vp-sidebar-width); }
+}
+@media (min-width: 1440px) {
+  .chrome-foot--docs {
+    padding-left: calc((100vw - var(--vp-layout-max-width)) / 2 + var(--vp-sidebar-width));
+  }
+}
