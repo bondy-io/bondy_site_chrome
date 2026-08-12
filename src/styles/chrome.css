@@ -20,6 +20,7 @@
   --acc-d: #5fd6b4;
   --blue: var(--acc-l);
   --blue-ink: #f1efec;
+  --blue-hover: #0f5c4e;
   --plate: #0d2f28;
   --soft: rgba(20, 112, 95, 0.16);
   --line: #c9c5bf;
@@ -37,6 +38,17 @@ html.dark {
   --line: #2a2c2e;
   --line-2: #1d1f21;
   --blue: var(--acc-d);
+
+  /* Ink used ON the accent (solid pills, badges).
+     
+     By day the accent is deep spruce and the ink is the light substrate:
+     #f1efec on #14705f is 5.21:1. At night the accent inverts to mint but
+     the ink did not, leaving #f1efec on #5fd6b4 at 1.56:1 — the label was
+     effectively invisible, and the .85 hover opacity made it worse. The
+     rule is "ink is the opposite substrate", so at night it is the dark
+     one: #0c0d0e on #5fd6b4 is 10.90:1. */
+  --blue-ink: #0c0d0e;
+  --blue-hover: #4dbf9f;
 }
 
 /* ── chrome shell ─────────────────────────────────────────── */
@@ -110,15 +122,21 @@ button.pill {
   display: inline-block; background: var(--blue); color: var(--blue-ink);
   font-family: var(--f); font-size: 13.5px; font-weight: 500;
   padding: 8px 20px; border-radius: 100px; border: 0;
-  line-height: 1.5; cursor: pointer;
-  transition: opacity 0.15s; white-space: nowrap; text-decoration: none;
+  line-height: 1.5; cursor: pointer; white-space: nowrap; text-decoration: none;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
 }
+/* Hover shifts the BACKGROUND rather than fading the whole button.
+   The original `opacity: .85` composited button and label alike against the
+   page, dragging the label's contrast down with it: by day #f1efec on the
+   faded spruce measured 3.93:1, below AA. Moving to a darker (day) or deeper
+   (night) accent keeps the ink at full strength and raises contrast on
+   hover instead — 6.88:1 by day, 8.59:1 at night. */
 a.pill:hover,
-button.pill:hover { opacity: 0.85; color: var(--blue-ink); }
+button.pill:hover { background: var(--blue-hover); color: var(--blue-ink); }
 a.pill.ghost,
 button.pill.ghost { background: none; color: var(--ink); border: 1px solid var(--line); }
 a.pill.ghost:hover,
-button.pill.ghost:hover { border-color: var(--ink); color: var(--ink); }
+button.pill.ghost:hover { background: none; border-color: var(--ink); color: var(--ink); }
 
 /* Version chip, rendered into the subbar slot. */
 .chrome-nav .ver {
