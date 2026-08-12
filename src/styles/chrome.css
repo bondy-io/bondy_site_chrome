@@ -95,16 +95,30 @@ html.dark .chrome-nav .tbtn .sun { display: none; }
 
 /* The pill is a shared design primitive, not chrome: the bar uses it for its
    call-to-action, and site layouts use it for hero actions. Like the palette
-   tokens it is therefore declared unscoped — scoping it under .bondy-chrome
-   made it unreachable from the page layouts that also rely on it. */
-.pill {
+   tokens it is therefore declared unscoped rather than under .bondy-chrome,
+   which would put it out of reach of those layouts.
+   
+   Qualified by element on purpose. A bare `.pill` is specificity (0,1,0),
+   which TIES with the blanket `* { padding: 0 }` resets these sites carry
+   (e.g. `.torso *`) — and a tie is decided by source order, so the reset
+   silently flattened every button to a padding-less box with the label
+   spilling out. `a.pill` / `button.pill` is (0,1,1) and wins regardless of
+   which stylesheet is loaded last. Per-site colour overrides such as
+   `.torso-language .band .pill` are (0,3,0) and still take precedence. */
+a.pill,
+button.pill {
   display: inline-block; background: var(--blue); color: var(--blue-ink);
-  font-size: 13.5px; font-weight: 500; padding: 8px 20px; border-radius: 100px;
-  transition: opacity 0.15s; white-space: nowrap;
+  font-family: var(--f); font-size: 13.5px; font-weight: 500;
+  padding: 8px 20px; border-radius: 100px; border: 0;
+  line-height: 1.5; cursor: pointer;
+  transition: opacity 0.15s; white-space: nowrap; text-decoration: none;
 }
-.pill:hover { opacity: 0.85; color: var(--blue-ink); }
-.pill.ghost { background: none; color: var(--ink); border: 1px solid var(--line); }
-.pill.ghost:hover { border-color: var(--ink); color: var(--ink); }
+a.pill:hover,
+button.pill:hover { opacity: 0.85; color: var(--blue-ink); }
+a.pill.ghost,
+button.pill.ghost { background: none; color: var(--ink); border: 1px solid var(--line); }
+a.pill.ghost:hover,
+button.pill.ghost:hover { border-color: var(--ink); color: var(--ink); }
 
 /* Version chip, rendered into the subbar slot. */
 .chrome-nav .ver {
