@@ -1,6 +1,6 @@
 {
   "name": "@bondy/site-chrome",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Shared chrome for the Bondy site: the navigation bar, footer, palette and type that every Bondy property wears, so the independently-deployed sites read as one.",
   "license": "Apache-2.0",
   "type": "module",
