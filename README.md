@@ -86,6 +86,25 @@ Slots: `search`, `cta`, `subbar`, `mobileExtra`.
 `VPNav`. Both are driven off the rendered markup with `:has()`, so a docs site
 never hand-maintains the number.
 
+### `<SiteSearch>`
+
+Site-wide search. Each deploy publishes its own Pagefind bundle
+(`npm run index` after the build); this component loads every bundle in
+`SEARCH_BUNDLES` and queries each one, grouping the results by deploy.
+
+It deliberately does **not** use Pagefind's `mergeIndex()`. Merging blends
+results into one ranked list, but each bundle scores terms against its own
+corpus, so a term rare in one and common in another ranks by the rare corpus
+first. Measured on the real content: "realm" via `mergeIndex` put the Router
+docs' own realms page at #15 with no Router results in the top 12; querying
+each bundle separately puts it back at #1.
+
+| prop | default | |
+|---|---|---|
+| `primary` | `'/pagefind/'` | this deploy's bundle — listed first |
+| `bundles` | `SEARCH_BUNDLES` | every bundle to query |
+| `perGroup` | `5` | results shown per deploy |
+
 ### `<SiteFooter>`
 
 `columns` (`[{ title, links: [{ text, href }] }]`), `blurb`, `note`, `layout`.

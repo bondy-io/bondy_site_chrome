@@ -19,5 +19,6 @@
  */
 export { default as SiteNav } from './SiteNav.vue'
 export { default as SiteFooter } from './SiteFooter.vue'
+export { default as SiteSearch } from './SiteSearch.vue'
 export { default as BondyWordmark } from './BondyWordmark.vue'
 export * from './sitemap.js'
