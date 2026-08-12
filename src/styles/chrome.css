@@ -19,10 +19,19 @@
   --acc-l: #14705f;
   --acc-d: #5fd6b4;
   --blue: var(--acc-l);
+  /* Ink on DARK SURFACES: the code plate, the diagram plates and their
+     labels. Constant across themes because the plate is dark in both. */
   --blue-ink: #f1efec;
+  /* Ink on the ACCENT itself (solid pills). Distinct from --blue-ink
+     because the accent inverts between themes and the plate does not. */
+  --accent-ink: #f1efec;
   --blue-hover: #0f5c4e;
   --plate: #0d2f28;
   --soft: rgba(20, 112, 95, 0.16);
+  /* Syntax colours for the code plate (keyword, number, string). */
+  --tk-k: #8fd6b4;
+  --tk-n: #e8c07a;
+  --tk-s: #cbb375;
   --line: #c9c5bf;
   --line-2: #dcd8d2;
   --f: 'Inter', system-ui, -apple-system, sans-serif;
@@ -39,15 +48,13 @@ html.dark {
   --line-2: #1d1f21;
   --blue: var(--acc-d);
 
-  /* Ink used ON the accent (solid pills, badges).
-     
-     By day the accent is deep spruce and the ink is the light substrate:
-     #f1efec on #14705f is 5.21:1. At night the accent inverts to mint but
-     the ink did not, leaving #f1efec on #5fd6b4 at 1.56:1 — the label was
-     effectively invisible, and the .85 hover opacity made it worse. The
-     rule is "ink is the opposite substrate", so at night it is the dark
-     one: #0c0d0e on #5fd6b4 is 10.90:1. */
-  --blue-ink: #0c0d0e;
+  /* Only the ACCENT ink flips. By day the accent is deep spruce and the
+     ink is the light substrate (5.21:1); at night the accent inverts to
+     mint, so #f1efec would sit at 1.56:1 and the label vanishes. The dark
+     substrate gives 10.90:1.
+     --blue-ink deliberately does NOT flip: it inks the dark plate, which
+     stays dark in both themes. Flipping it blackened every diagram title. */
+  --accent-ink: #0c0d0e;
   --blue-hover: #4dbf9f;
 }
 
@@ -119,7 +126,7 @@ html.dark .chrome-nav .tbtn .sun { display: none; }
    `.torso-language .band .pill` are (0,3,0) and still take precedence. */
 a.pill,
 button.pill {
-  display: inline-block; background: var(--blue); color: var(--blue-ink);
+  display: inline-block; background: var(--blue); color: var(--accent-ink);
   font-family: var(--f); font-size: 13.5px; font-weight: 500;
   padding: 8px 20px; border-radius: 100px; border: 0;
   line-height: 1.5; cursor: pointer; white-space: nowrap; text-decoration: none;
@@ -132,7 +139,7 @@ button.pill {
    (night) accent keeps the ink at full strength and raises contrast on
    hover instead — 6.88:1 by day, 8.59:1 at night. */
 a.pill:hover,
-button.pill:hover { background: var(--blue-hover); color: var(--blue-ink); }
+button.pill:hover { background: var(--blue-hover); color: var(--accent-ink); }
 a.pill.ghost,
 button.pill.ghost { background: none; color: var(--ink); border: 1px solid var(--line); }
 a.pill.ghost:hover,
