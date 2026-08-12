@@ -27,6 +27,29 @@ costs a version bump and a redeploy in each repo rather than a coupled build.
 
 Every site must track the **same tag**. Skew is how the nav drifted before.
 
+### Working on it locally
+
+`npm` installs a `file:` dependency as a **symlink**, so Vite resolves this
+package's `vue` import from its real path outside the consuming project and
+the build fails with `Rollup failed to resolve import "vue"`. Install a packed
+tarball instead, which is what the git install produces anyway:
+
+```sh
+cd bondy_site_chrome && npm pack
+cd ../bondy_website && npm install ../bondy_site_chrome/bondy-site-chrome-0.1.0.tgz
+```
+
+`yarn` copies `file:` dependencies rather than symlinking them, so
+`file:../bondy_site_chrome` works there directly.
+
+Consuming sites must also declare:
+
+```js
+vite: { ssr: { noExternal: ['@bondy/site-chrome'] } }
+```
+
+because the package ships raw `.vue` source for Vite to compile.
+
 ## Use
 
 ```js
