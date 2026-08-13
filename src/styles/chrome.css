@@ -210,6 +210,11 @@ button.pill.ghost:hover { background: none; border-color: var(--ink); color: var
 /* ── footer ───────────────────────────────────────────────── */
 .chrome-foot .tfoot { border-top: 1px solid var(--line); padding: 66px 0 34px; }
 .chrome-foot .fgrid { display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 40px; }
+/* A site that fills the `extra` slot (bondy.io's newsletter form) needs a
+   fifth column, or the form wraps onto a second row. Driven off the slot
+   rather than a prop so the caller cannot forget it. Matches the torso
+   reference's five-column footer exactly. */
+.chrome-foot .fgrid.has-extra { grid-template-columns: 1.4fr repeat(3, 1fr) 1.4fr; }
 .chrome-foot .fgrid h5 {
   font-family: var(--m); font-size: 10.5px; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--ink-3); margin-bottom: 18px; font-weight: 400;
@@ -226,7 +231,8 @@ button.pill.ghost:hover { background: none; border-color: var(--ink); color: var
   font-family: var(--m); font-size: 10.5px; letter-spacing: 0.06em; color: var(--ink-3);
 }
 @media (max-width: 860px) {
-  .chrome-foot .fgrid { grid-template-columns: 1fr 1fr; gap: 34px; }
+  .chrome-foot .fgrid,
+  .chrome-foot .fgrid.has-extra { grid-template-columns: 1fr 1fr; gap: 34px; }
 }
 
 /* ── VitePress integration (layout="docs") ────────────────── */

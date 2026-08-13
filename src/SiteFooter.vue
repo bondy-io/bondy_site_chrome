@@ -29,7 +29,7 @@ defineProps({
   <div class="bondy-chrome chrome-foot" :class="`chrome-foot--${layout}`">
     <footer class="tfoot">
       <div class="wrap">
-        <div class="fgrid">
+        <div class="fgrid" :class="{ 'has-extra': $slots.extra }">
           <div class="fb">
             <span class="lg"><BondyWordmark /></span>
             <p v-if="blurb">{{ blurb }}</p>
