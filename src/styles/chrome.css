@@ -92,13 +92,13 @@ html.dark {
 .chrome-nav .top > .wrap { display: flex; align-items: center; gap: 32px; height: 64px; }
 .chrome-nav .lg { height: 40.5px; }
 
-.chrome-nav nav.primary { display: flex; gap: 26px; font-size: 14px; color: var(--ink-2); }
+.chrome-nav nav.primary { display: flex; gap: 26px; font-size: 16px; color: var(--ink-2); }
 .chrome-nav nav.primary a { white-space: nowrap; }
 .chrome-nav nav.primary a.on { color: var(--ink); }
 
 .chrome-nav .r {
   margin-left: auto; display: flex; align-items: center;
-  gap: 20px; font-size: 14px; color: var(--ink-2);
+  gap: 20px; font-size: 16px; color: var(--ink-2);
 }
 
 .chrome-nav .tbtn {
@@ -197,7 +197,12 @@ button.pill.ghost:hover { background: none; border-color: var(--ink); color: var
   font-size: 14px; color: var(--ink-2);
 }
 
-@media (max-width: 999px) {
+/* The desktop bar needs 1150px to lay out without pushing the CTA off
+   screen: 104 logo + 595 primary nav + 347 right group + gaps + 80 padding,
+   measured in headless Chrome on bondy.io's widest bar (7 links, GitHub,
+   search, theme toggle, CTA pill) at font-size 16px. Below that the bar
+   collapses to the hamburger rather than overflowing the viewport. */
+@media (max-width: 1149px) {
   .chrome-nav nav.primary,
   .chrome-nav .ghlink,
   .chrome-nav .subbar { display: none; }
@@ -242,6 +247,11 @@ button.pill.ghost:hover { background: none; border-color: var(--ink); color: var
    chrome so a docs site never has to hand-maintain the number. */
 @media (min-width: 960px) {
   :root:has(.chrome-nav--docs) { --vp-nav-height: 64px; }
+}
+/* The subbar only renders above the bar's own breakpoint, so the extra
+   42px is claimed there too — otherwise the content sits 42px low
+   wherever the subbar is display:none. */
+@media (min-width: 1150px) {
   :root:has(.chrome-nav--docs .subbar) { --vp-nav-height: 106px; }
 }
 :root:has(.chrome-nav--docs) .VPNav { display: none; }
