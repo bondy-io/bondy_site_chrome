@@ -10,8 +10,8 @@
  * The properties are separate deploys on separate hosts:
  *
  *   website  bondy.io              bondy_website
- *   docs     developer.bondy.io    bondy_docs  (the docs portal: Router today,
- *                                               other systems later)
+ *   docs     developer.bondy.io    bondy_docs  (the docs portal; Router and
+ *                                               WAMP today, BAMP later)
  *   lang     lang.bondy.io         bondy_lang  (generated from Bondy source)
  *
  * A bare `/language` therefore cannot work everywhere: on developer.bondy.io
@@ -45,8 +45,13 @@ export const SITE_LINKS = [
 /**
  * Documentation sets, for the portal index on developer.bondy.io.
  *
- * The router docs live on the docs host itself; the language docs are
- * generated from Bondy source and deploy separately.
+ * The router and protocol sets live on the docs host itself; the language
+ * docs are generated from Bondy source and deploy separately.
+ *
+ * The protocol is a set of its own because its reader is not the router's:
+ * someone writing a WAMP component does not need to know how Bondy is
+ * configured or operated. It is also where BAMP will slot in, as a fourth
+ * entry and no other change.
  */
 export const DOC_SETS = [
   {
@@ -55,6 +60,13 @@ export const DOC_SETS = [
     blurb: 'Run, configure and operate the router.',
     site: 'docs',
     path: '/router'
+  },
+  {
+    id: 'wamp-docs',
+    text: 'WAMP',
+    blurb: 'The protocol: routed RPC and publish/subscribe, for developers writing components.',
+    site: 'docs',
+    path: '/wamp'
   },
   {
     id: 'lang-docs',
