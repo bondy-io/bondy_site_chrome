@@ -23,12 +23,19 @@
      there is no bundle to load and the box says so instead of throwing. -->
 <script setup>
 import { ref, shallowRef, onBeforeUnmount } from 'vue'
-import { SEARCH_BUNDLES } from './sitemap.js'
+import { resolveBundles } from './sitemap.js'
 
 const props = defineProps({
-  /** This deploy's own bundle. Listed first, since it is the likeliest hit. */
-  primary: { type: String, default: '/pagefind/' },
-  bundles: { type: Array, default: () => SEARCH_BUNDLES },
+  /**
+   * Which property this site is — an ORIGINS key ('website' | 'docs' |
+   * 'lang'). Its own bundle is fetched from a relative path, so `vitepress
+   * dev` and `preview` search their own build rather than production, and
+   * is listed first since it is the likeliest hit. The other properties'
+   * bundles are absolute and need CORS on /pagefind/* at their origin.
+   */
+  self: { type: String, default: 'website' },
+  /** Override the resolved bundle list entirely. */
+  bundles: { type: Array, default: null },
   /** Results shown per group. */
   perGroup: { type: Number, default: 5 }
 })
@@ -42,8 +49,9 @@ let timer = null
 
 // Ordered so this site's own results come first.
 const ordered = () => {
-  const own = props.bundles.filter((b) => b.bundlePath === props.primary)
-  const rest = props.bundles.filter((b) => b.bundlePath !== props.primary)
+  const all = props.bundles ?? resolveBundles(props.self)
+  const own = all.filter((b) => b.site === props.self)
+  const rest = all.filter((b) => b.site !== props.self)
   return [...own, ...rest]
 }
 

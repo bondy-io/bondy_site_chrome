@@ -22,17 +22,26 @@
                           it stays in flow, exactly as VPNav itself does.
 -->
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useData, useRoute } from 'vitepress'
-import { SITE_LINKS, GITHUB } from './sitemap.js'
+import { resolveLinks, GITHUB } from './sitemap.js'
 import BondyWordmark from './BondyWordmark.vue'
 
 const props = defineProps({
   /** id from SITE_LINKS marking which section this site is. */
   active: { type: String, default: '' },
+  /**
+   * Which property this site IS — an ORIGINS key ('website' | 'docs' |
+   * 'lang'). Links to the other properties become absolute; links to this
+   * one stay relative, so client-side routing and `vitepress dev` on
+   * localhost both keep working.
+   */
+  self: { type: String, default: 'website' },
   github: { type: String, default: GITHUB },
   layout: { type: String, default: 'sticky' }
 })
+
+const links = computed(() => resolveLinks(props.self))
 
 const { isDark } = useData()
 const route = useRoute()
@@ -46,11 +55,11 @@ watch(() => route.path, () => (open.value = false))
   <div class="bondy-chrome chrome-nav" :class="`chrome-nav--${layout}`">
     <div class="top">
       <div class="wrap">
-        <a href="/" class="lg" aria-label="Bondy home"><BondyWordmark /></a>
+        <a :href="links[0].href" class="lg" aria-label="Bondy home"><BondyWordmark /></a>
 
         <nav class="primary">
           <a
-            v-for="l in SITE_LINKS"
+            v-for="l in links"
             :key="l.id"
             :href="l.href"
             :class="{ on: l.id === active }"
@@ -91,7 +100,7 @@ watch(() => route.path, () => (open.value = false))
         <div class="wrap">
           <div class="mm-primary">
             <a
-              v-for="l in SITE_LINKS"
+              v-for="l in links"
               :key="l.id"
               :href="l.href"
               :class="{ on: l.id === active }"
