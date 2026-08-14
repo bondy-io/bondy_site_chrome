@@ -35,15 +35,24 @@ export const ORIGINS = {
  * Top-level navigation, in bar order. `site` names the owning property.
  *
  * The bar carries product LINES, not products. Bondy ships more than one
- * platform product (Fabric today, Sync and the hosted Cloud after it), and a
- * bar that gains an item per launch stops being navigation. `Platform` is a
- * category page listing what is behind it — the same shape as the Docs
+ * product per line — Fabric today with Sync after it, Cloud under Service —
+ * and a bar that gains an item per launch stops being navigation. Each line
+ * is a category page listing what is behind it: the same shape as the Docs
  * portal, and the reason there are no dropdowns anywhere in this bar.
+ *
+ * The lines mirror the product table on bondy.io's home page, which has
+ * named them Language / Platform / Service since before this bar existed.
  */
 export const SITE_LINKS = [
-  { id: 'home', text: 'Home', site: 'website', path: '/' },
+  // `hidden` keeps home out of the bar while still naming its href: the
+  // wordmark to the left of the bar already links home, which is convention
+  // everywhere, and the 71px it frees is what pays for the Service item
+  // without moving the hamburger breakpoint. Measured on the rendered bar:
+  // 7 items = 1181px, +Service = 1264px, +Service −Home = 1193px.
+  { id: 'home', text: 'Home', site: 'website', path: '/', hidden: true },
   { id: 'language', text: 'Language', site: 'website', path: '/language' },
   { id: 'platform', text: 'Platform', site: 'website', path: '/platform' },
+  { id: 'service', text: 'Service', site: 'website', path: '/service' },
   { id: 'docs', text: 'Docs', site: 'docs', path: '/' },
   { id: 'dispatches', text: 'Dispatches', site: 'website', path: '/blog/' },
   { id: 'community', text: 'Community', site: 'website', path: '/community/' },
@@ -119,6 +128,12 @@ function href(entry, self) {
 
 export function resolveLinks(self = 'website') {
   return SITE_LINKS.map((l) => ({ ...l, href: href(l, self) }))
+}
+
+/** The home href, for the wordmark. Always present, bar or no bar. */
+export function resolveHome(self = 'website') {
+  const home = SITE_LINKS.find((l) => l.id === 'home')
+  return href(home, self)
 }
 
 export function resolveDocSets(self = 'website') {

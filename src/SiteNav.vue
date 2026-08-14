@@ -24,7 +24,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useData, useRoute } from 'vitepress'
-import { resolveLinks, GITHUB } from './sitemap.js'
+import { resolveLinks, resolveHome, GITHUB } from './sitemap.js'
 import BondyWordmark from './BondyWordmark.vue'
 
 const props = defineProps({
@@ -41,7 +41,10 @@ const props = defineProps({
   layout: { type: String, default: 'sticky' }
 })
 
-const links = computed(() => resolveLinks(props.self))
+// `hidden` entries still resolve — the wordmark uses home — but stay out of
+// the bar, which is what keeps the bar at seven items as lines are added.
+const links = computed(() => resolveLinks(props.self).filter((l) => !l.hidden))
+const homeHref = computed(() => resolveHome(props.self))
 
 const { isDark } = useData()
 const route = useRoute()
@@ -55,7 +58,7 @@ watch(() => route.path, () => (open.value = false))
   <div class="bondy-chrome chrome-nav" :class="`chrome-nav--${layout}`">
     <div class="top">
       <div class="wrap">
-        <a :href="links[0].href" class="lg" aria-label="Bondy home"><BondyWordmark /></a>
+        <a :href="homeHref" class="lg" aria-label="Bondy home"><BondyWordmark /></a>
 
         <nav class="primary">
           <a
