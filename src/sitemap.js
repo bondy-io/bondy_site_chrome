@@ -31,11 +31,19 @@ export const ORIGINS = {
   lang: 'https://lang.bondy.io'
 }
 
-/** Top-level navigation, in bar order. `site` names the owning property. */
+/**
+ * Top-level navigation, in bar order. `site` names the owning property.
+ *
+ * The bar carries product LINES, not products. Bondy ships more than one
+ * platform product (Fabric today, Sync and the hosted Cloud after it), and a
+ * bar that gains an item per launch stops being navigation. `Platform` is a
+ * category page listing what is behind it — the same shape as the Docs
+ * portal, and the reason there are no dropdowns anywhere in this bar.
+ */
 export const SITE_LINKS = [
   { id: 'home', text: 'Home', site: 'website', path: '/' },
   { id: 'language', text: 'Language', site: 'website', path: '/language' },
-  { id: 'router', text: 'Fabric', site: 'website', path: '/router' },
+  { id: 'platform', text: 'Platform', site: 'website', path: '/platform' },
   { id: 'docs', text: 'Docs', site: 'docs', path: '/' },
   { id: 'dispatches', text: 'Dispatches', site: 'website', path: '/blog/' },
   { id: 'community', text: 'Community', site: 'website', path: '/community/' },
@@ -55,9 +63,10 @@ export const SITE_LINKS = [
  */
 export const DOC_SETS = [
   {
-    id: 'router-docs',
+    id: 'fabric-docs',
     text: 'Bondy Fabric',
-    blurb: 'Run, configure and operate the router.',
+    blurb: 'Run, configure and operate the application networking platform.',
+    group: 'platform',
     site: 'docs',
     path: '/router'
   },
@@ -65,6 +74,7 @@ export const DOC_SETS = [
     id: 'wamp-docs',
     text: 'WAMP',
     blurb: 'The protocol: routed RPC and publish/subscribe, for developers writing components.',
+    group: 'protocol',
     site: 'docs',
     path: '/wamp'
   },
@@ -72,6 +82,7 @@ export const DOC_SETS = [
     id: 'lang-docs',
     text: 'Bondy Language',
     blurb: 'The language reference, generated from source.',
+    group: 'language',
     site: 'lang',
     path: '/'
   }
@@ -112,6 +123,24 @@ export function resolveLinks(self = 'website') {
 
 export function resolveDocSets(self = 'website') {
   return DOC_SETS.map((d) => ({ ...d, href: href(d, self) }))
+}
+
+/** Human labels for the DOC_SETS groups, in display order. */
+export const DOC_GROUPS = [
+  { id: 'platform', text: 'Platform' },
+  { id: 'protocol', text: 'Protocols' },
+  { id: 'language', text: 'Language' }
+]
+
+/**
+ * Doc sets bucketed by line, for the portal index. Empty groups drop out, so
+ * the portal stays a flat list until a second set joins a group.
+ */
+export function resolveDocGroups(self = 'website') {
+  const sets = resolveDocSets(self)
+  return DOC_GROUPS
+    .map((g) => ({ ...g, sets: sets.filter((s) => s.group === g.id) }))
+    .filter((g) => g.sets.length)
 }
 
 /**
