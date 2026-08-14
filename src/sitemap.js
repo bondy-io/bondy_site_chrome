@@ -35,7 +35,7 @@ export const ORIGINS = {
 export const SITE_LINKS = [
   { id: 'home', text: 'Home', site: 'website', path: '/' },
   { id: 'language', text: 'Language', site: 'website', path: '/language' },
-  { id: 'router', text: 'Router', site: 'website', path: '/router' },
+  { id: 'router', text: 'Fabric', site: 'website', path: '/router' },
   { id: 'docs', text: 'Docs', site: 'docs', path: '/' },
   { id: 'dispatches', text: 'Dispatches', site: 'website', path: '/blog/' },
   { id: 'community', text: 'Community', site: 'website', path: '/community/' },
@@ -56,7 +56,7 @@ export const SITE_LINKS = [
 export const DOC_SETS = [
   {
     id: 'router-docs',
-    text: 'Bondy Router',
+    text: 'Bondy Fabric',
     blurb: 'Run, configure and operate the router.',
     site: 'docs',
     path: '/router'
