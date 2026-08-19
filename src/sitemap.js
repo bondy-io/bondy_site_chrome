@@ -70,10 +70,18 @@ export const SITE_LINKS = [
  * configured or operated. It is also where BAMP will slot in, as a fourth
  * entry and no other change.
  */
-export const DOC_SETS = [
+export const DOC_SETS = [,
+  {
+    id: 'lang-docs',
+    text: 'Bondy Language',
+    blurb: 'The Bondy language reference documentation, generated from source.',
+    group: 'language',
+    site: 'lang',
+    path: '/'
+  },
   {
     id: 'fabric-docs',
-    text: 'Bondy Fabric',
+    text: 'Bondy Connect',
     blurb: 'Run, configure and operate the application networking platform.',
     group: 'platform',
     site: 'docs',
@@ -82,18 +90,10 @@ export const DOC_SETS = [
   {
     id: 'wamp-docs',
     text: 'WAMP',
-    blurb: 'The protocol: routed RPC and publish/subscribe, for developers writing components.',
+    blurb: 'The Web Application Messaging Protocol: routed remote procedure calls and publish/subscribe over one connection. For developers writing WAMP components.',
     group: 'protocol',
     site: 'docs',
     path: '/wamp'
-  },
-  {
-    id: 'lang-docs',
-    text: 'Bondy Language',
-    blurb: 'The language reference, generated from source.',
-    group: 'language',
-    site: 'lang',
-    path: '/'
   }
 ]
 
