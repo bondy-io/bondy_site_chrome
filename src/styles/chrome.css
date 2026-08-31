@@ -258,6 +258,32 @@ button.pill.ghost:hover { background: none; border-color: var(--ink); color: var
 /* The sidebar must sit above the fixed bar's shadow. */
 :root:has(.chrome-nav--docs) .VPSidebar { z-index: 50; }
 
+/* Raising --vp-nav-height above 64px breaks VitePress's sidebar curtain — the
+   opaque strip that masks sidebar content scrolling under the nav — so it has
+   to be repaired here, next to the declaration that causes it.
+
+   VitePress gives the curtain height and margin from the variable but pins it
+   with a hardcoded offset:
+
+       height: var(--vp-nav-height);  margin-top: calc(var(--vp-nav-height) * -1);
+       position: sticky;  top: -64px;
+
+   A sticky offset resolves against the scrollport's CONTENT box, which starts
+   at .VPSidebar's padding-top — also var(--vp-nav-height). At the stock 64px
+   the two cancel, the curtain pins at 0 and covers exactly the strip behind
+   the nav. At 106px it pins at 106 - 64 = 42px and covers 42..148px, and
+   since it carries z-index 1 and the sidebar background it paints over the
+   first group heading of every sidebar.
+
+   Measured in headless Chrome at 1440x900 on a built docs site: bar 0..109,
+   curtain 42..148, first group heading 116..141 and hit-tested as covered by
+   .curtain. Deriving the offset from the same variable restores the invariant
+   (pin position 0); re-measured after the change, curtain 0..106 and the
+   heading hit-tests as itself. */
+:root:has(.chrome-nav--docs) .VPSidebar .curtain {
+  top: calc(var(--vp-nav-height) * -1);
+}
+
 /* A docs footer is a sibling of VitePress's Layout, not inside its content
    column, so it clears the sidebar the same way the content does. */
 @media (min-width: 960px) {
