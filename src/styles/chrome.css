@@ -79,17 +79,210 @@ html.dark {
 .bondy-chrome .bondy-wordmark { height: 100%; width: auto; display: block; }
 
 /* ── nav ──────────────────────────────────────────────────── */
-.chrome-nav--sticky { position: sticky; top: 0; z-index: 80; }
+/* `.bondy-chrome` (below) fills every chrome root — nav AND footer — with a
+   solid --paper background. That's correct for the footer and for `.top`
+   itself, but `.chrome-nav--sticky` is the OUTER sticky box the floating
+   pill sits inside; left solid, it paints a full-width bar behind the
+   pill's gap the instant `.top` shrinks and floats — exactly the flat bar
+   visible behind the capsule instead of real page content. `.top` already
+   paints its own background at every state (flush, glass, pill), so the
+   outer box needs none of its own. */
+.chrome-nav--sticky { position: sticky; top: 0; z-index: 80; background: transparent; box-sizing: border-box; }
+/* Holds the bar's visible width steady while the drawer is open (see the
+   `--chrome-sbw` comment in SiteNav.vue's `watch(open, ...)`) — otherwise
+   `body`'s scroll-lock removes the document scrollbar and this bar, sized
+   off the viewport, widens by the same amount, dragging its right-aligned
+   icons sideways under the reader's thumb. `--chrome-sbw` is only ever set
+   while open, so this is a no-op at every other time. */
+.chrome-nav--sticky,
+.chrome-nav--docs { box-sizing: border-box; padding-right: var(--chrome-sbw, 0px); }
+/* Phones AND tablets: `position: sticky` only pins the bar while it stays
+   inside a scroll container that never clips it — several marketing pages
+   wrap hero sections in `overflow: hidden` for clipped visuals, which
+   silently turns `sticky` into `static` and lets the bar scroll away, or
+   get sheared in half against the clipped edge, the instant the page
+   scrolls past that ancestor's own bounds. `fixed` has no such dependency,
+   so the bar (and its frosted-glass background, permanent at this width —
+   see `.chrome-nav .top` below) stays glued to the viewport regardless of
+   what an ancestor does. `border-box` keeps that same guarantee: the bar's
+   own padding/border must count INSIDE `right: 0`'s box, or the box grows
+   past the viewport edge and the far side clips.
+   1024px, not 768px: the pill-morph block just below is a desktop-only
+   effect — anything narrower has to fall back to this plain, permanently
+   full-width bar instead, and 1024px is where chrome-nav's own tablet
+   breakpoint (see the 1149px collapse comment further down) already draws
+   that "narrow enough to collapse the primary nav" line closely enough that
+   a phone and a tablet in portrait both get the exact same treatment.
+   `.chrome-nav-spacer` (declared with `.mmenu`, since both exist purely to
+   support this) replaces the in-flow height `position: fixed` removes, so
+   page content doesn't jump up underneath it.
+
+   `z-index: 1010` — above the mobile search sheet's own 1001 (see
+   `.csearch-panel`) and its 999 backdrop — so the header stays the topmost
+   layer no matter what's open beneath it. The bar is meant to stay reachable
+   and visible while the search sheet or the burger drawer is open; a lower
+   z-index here would let a tall sheet paint over it instead. */
+@media (max-width: 1024px) {
+  .chrome-nav--sticky {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1010;
+  }
+}
 /* Docs layout: this bar stands in for VitePress's VPNav entirely. Below
-   960px VPNav is `position: relative` and scrolls away, so matching that
-   keeps the content offset correct without inventing one. */
-.chrome-nav--docs { position: relative; z-index: 60; }
+   960px it stays `position: sticky` rather than VPNav's own `relative`, so
+   the bar — and the burger menu it exposes at that width — stays reachable
+   on mobile instead of scrolling away, matching the marketing bar's mobile
+   behaviour. Sticky keeps it in flow, so it needs no extra offset the way
+   the fixed rule below does. */
+.chrome-nav--docs { position: sticky; top: 0; z-index: 60; }
 @media (min-width: 960px) {
   .chrome-nav--docs { position: fixed; top: 0; left: 0; right: 0; }
 }
 
-.chrome-nav .top { background: var(--paper); border-bottom: 1px solid var(--line); }
+/* `position: relative` makes `.top` — the bar's own visible box, flush or
+   floating pill — the containing block for the search panel's `position:
+   absolute; top: 100%` (see the "site-wide search" section below). Without
+   it the nearest positioned ancestor would depend on whether `.top` also
+   has `backdrop-filter` at that moment (that property creates a containing
+   block of its own, same as `transform`), which flips on/off with
+   `.scrolled` — the panel would anchor to a different box, at a different
+   height, the instant the page crosses the scroll threshold. `position:
+   relative` pins the answer regardless of scroll state. */
+.chrome-nav .top { position: relative; background: var(--paper); border-bottom: 1px solid var(--line); box-sizing: border-box; }
+/* Torso-style glass bar: a hairline border plus a translucent, blurred
+   surface so page content reads faintly through the bar on scroll. Layered
+   behind an @supports check so browsers without backdrop-filter just keep
+   the solid --paper fill declared above. This is the PERMANENT bar look —
+   the docs bar keeps exactly this at every width and scroll position, since
+   shrinking it would have to also shrink --vp-nav-height mid-scroll and
+   drag every VitePress offset (sidebar, content, curtain) along with it. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .chrome-nav .top {
+    background: color-mix(in srgb, var(--paper) 65%, transparent);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+  }
+}
 .chrome-nav .top > .wrap { display: flex; align-items: center; gap: 32px; height: 64px; }
+
+/* ── scroll-triggered pill (sticky/marketing layout, desktop only) ──
+   Phone AND tablet get none of this: the rules below live entirely inside
+   the 1025px+ query, so anything at or below 1024px keeps the plain,
+   permanently-visible, permanently-fixed bar declared above with zero added
+   transitions, transforms or reflows — no shrink jank, no touch targets
+   moving under a thumb mid-scroll, and no risk of the drawer below
+   misaligning with a header that's quietly shrunk out from under it.
+
+   Desktop starts transparent (full width, flush with the page) and only
+   gains the glass pill once `.scrolled` is toggled by SiteNav's own
+   scroll listener at 50px, which is also where the CSS below floats it
+   off the edges and rounds it into a capsule.
+
+   The gap above the floating pill is a `padding-top` on the STICKY
+   OUTER box, not a `margin-top` on `.top`. A child's top margin collapses
+   through a parent that has no padding/border of its own — which this
+   parent didn't — so the 12px never showed up as a gap at all: `.top` sat
+   flush at the very top with its rounded top corners cut clean off by the
+   viewport edge, which is the "can't see the entire thing" cropping.
+   Padding on the parent is never eligible to collapse, so it always
+   renders as real, visible space. */
+@media (min-width: 1025px) {
+  .chrome-nav--sticky {
+    padding-top: 0;
+    transition: padding-top 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .chrome-nav--sticky.scrolled { padding-top: 14px; }
+
+  .chrome-nav--sticky .top {
+    background: transparent;
+    border-bottom-color: transparent;
+    margin: 0 auto;
+    width: 100%;
+    /* Numeric, not `none` — see the comment below on the scrolled rule for
+       why the cap has to stay a real length on both sides of the change. */
+    max-width: 100vw;
+    border-radius: 0;
+    box-shadow: none;
+    transition:
+      background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+      border-radius 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+      width 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+      max-width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .chrome-nav--sticky .top { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  }
+  .chrome-nav--sticky .top > .wrap {
+    transition:
+      height 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+      gap 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+      padding 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .chrome-nav--sticky .top nav.primary,
+  .chrome-nav--sticky .top .r {
+    transition: gap 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Two numeric max-widths, not `none` -> `1040px`: a CSS transition can't
+     interpolate FROM the `none` keyword (only real lengths/percentages
+     animate), so that pairing snapped straight to the end value on frame
+     one — width and max-width stopped moving while background/radius kept
+     animating, which read as a half-broken transition. Swapping to
+     `min(1040px, calc(100% - 48px))` on the width instead made it worse: in
+     this engine a transition into a `min()` expression never resolves and
+     gets stuck rendering its OWN start value indefinitely — and a running
+     transition outranks even an `!important` inline override, so nothing
+     could unstick it short of removing the transition. Two ordinary numeric
+     max-widths (100vw -> 1180px) sidestep both failure modes and animate
+     exactly like width does.
+
+     1180px, not 1040px: chrome-nav's own earlier measurement (below, in the
+     collapse-breakpoint comment) is that the full desktop bar — 7 links,
+     search, GitHub, the toggle, the CTA — needs ~1181px to lay out without
+     overflowing. A 1040px pill is narrower than its own contents, so the
+     CTA pill at the far right had nowhere to go but past the rounded edge —
+     not a design choice, just a cap picked without checking it against the
+     content it has to hold. 1180px is the same content requirement plus a
+     few px of breathing room. The padding/gap reductions just below claw
+     back some of the "compact" feeling that losing 140px of cap gives up. */
+  .chrome-nav--sticky.scrolled .top {
+    width: calc(100% - 48px);
+    max-width: 1180px;
+    border-radius: 999px;
+    border-bottom-color: var(--line);
+    background: color-mix(in srgb, var(--paper) 65%, transparent);
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.14);
+  }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .chrome-nav--sticky.scrolled .top {
+      backdrop-filter: blur(18px) saturate(160%);
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+    }
+  }
+  .chrome-nav--sticky.scrolled .top > .wrap {
+    height: 56px;
+    gap: 22px;
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+  .chrome-nav--sticky.scrolled .top nav.primary { gap: 20px; }
+  .chrome-nav--sticky.scrolled .top .r { gap: 14px; }
+}
+
+/* Belt and braces: if a viewport crosses the 1024px line while `.scrolled`
+   is already set (rotation, or a resize mid-scroll), the pill must not
+   persist into the phone/tablet layout. */
+@media (max-width: 1024px) {
+  .chrome-nav--sticky.scrolled { padding-top: 0; }
+  .chrome-nav--sticky.scrolled .top {
+    width: 100%; max-width: none; border-radius: 0; box-shadow: none;
+  }
+}
 .chrome-nav .lg { height: 40.5px; }
 
 .chrome-nav nav.primary { display: flex; gap: 26px; font-size: 16px; color: var(--ink-2); }
@@ -101,12 +294,15 @@ html.dark {
   gap: 20px; font-size: 16px; color: var(--ink-2);
 }
 
+.chrome-nav .ghlink,
 .chrome-nav .tbtn {
   display: flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 50%;
   background: none; color: var(--ink-2); cursor: pointer; transition: 0.15s; flex: none;
 }
+.chrome-nav .ghlink:hover,
 .chrome-nav .tbtn:hover { border-color: var(--ink); color: var(--ink); }
+.chrome-nav .ghlink svg,
 .chrome-nav .tbtn svg { width: 15px; height: 15px; }
 .chrome-nav .tbtn .moon { display: none; }
 html.dark .chrome-nav .tbtn .moon { display: block; }
@@ -169,39 +365,118 @@ button.pill.ghost:hover { background: none; border-color: var(--ink); color: var
 }
 .chrome-nav .subbar nav a:hover { color: var(--blue); }
 
-/* ── burger + panel ───────────────────────────────────────── */
+/* ── burger + full-screen drawer ──────────────────────────── */
 .chrome-nav .mbtn {
   display: none; flex-direction: column; justify-content: center; gap: 4px;
   width: 32px; height: 32px; background: none; border: 0; cursor: pointer; padding: 0;
 }
 .chrome-nav .mbtn span { display: block; height: 1.5px; width: 18px; background: var(--ink-2); }
-.chrome-nav .mmenu {
-  display: none; position: absolute; top: 100%; left: 0; right: 0;
-  background: var(--paper); border-bottom: 1px solid var(--line);
-  box-shadow: 0 22px 40px rgba(0, 0, 0, 0.12);
-  opacity: 0; pointer-events: none; transform: translateY(-6px);
-  transition: opacity 0.18s, transform 0.18s;
+
+/* Sibling of `.chrome-nav--sticky`, not a child — `position: fixed` above
+   takes the bar out of flow at phone AND tablet widths, so this stands in
+   for the 64px (subbar is already hidden at this width, see the 1149px
+   block below) it used to occupy, keeping page content from sliding under
+   it. Unused at >=1025px, where the bar is still `position: sticky` and
+   needs no stand-in. */
+.chrome-nav-spacer { display: none; }
+@media (max-width: 1024px) {
+  .chrome-nav-spacer { display: block; height: 64px; }
 }
-.chrome-nav .mmenu.open { opacity: 1; pointer-events: auto; transform: none; }
-.chrome-nav .mmenu .wrap { padding-top: 10px; padding-bottom: 22px; }
+
+/* The drawer is a fixed, full-height overlay pinned under the 64px header
+   row (the subbar is already display:none whenever the drawer can open, so
+   64px is the header's true height at every width below), not a dropdown
+   panel — large touch typography needs the vertical room a panel can't
+   give without shoving page content down. `.mm-scroll` carries the
+   scrolling so the drawer itself can stay a plain positioned box. */
+/* Opacity-only fade — no `transform`. A `transform` transitioning on the
+   SAME element as `backdrop-filter` is a known Chromium/WebKit compositing
+   bug: the blur gets composited against a stale/partial snapshot of what's
+   behind it while the transform animates (and sometimes after, until the
+   next repaint), which shows up as the glass rendering correctly near the
+   top of the drawer and fading into unblurred, half-transparent content
+   toward the bottom — exactly the "menu clips/tears" look on tablets, which
+   have both more content to blur behind and (on iPad-class GPUs) a slower
+   compositor to catch up. Dropping the slide leaves only `opacity`, which
+   has no such interaction with `backdrop-filter`. */
+.chrome-nav .mmenu {
+  display: none; position: fixed; top: 64px; left: 0; right: 0; bottom: 0;
+  z-index: 70; background: var(--paper); border-top: 1px solid var(--line);
+  box-sizing: border-box;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+/* Same formula as `.chrome-nav .top` above (65% tint, same blur/saturate),
+   not a bespoke value — the drawer sits flush under the bar with only a
+   hairline between them, so the two need to read as one continuous glass
+   surface instead of two panels of differing opacity/blur meeting at a seam. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .chrome-nav .mmenu {
+    background: color-mix(in srgb, var(--paper) 65%, transparent);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+  }
+}
+.chrome-nav .mmenu.open { opacity: 1; pointer-events: auto; }
+/* `-webkit-overflow-scrolling: touch` gives momentum scrolling inside a
+   `position: fixed` ancestor on older iOS Safari, where a plain
+   `overflow-y: auto` there can otherwise feel locked/unresponsive to touch.
+   `overscroll-behavior: contain` stops a scroll that reaches the top/bottom
+   of the drawer from chaining into the page behind it. */
+.chrome-nav .mm-scroll {
+  height: 100%; overflow-y: auto;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+}
+.chrome-nav .mmenu .wrap { padding-top: 28px; padding-bottom: 48px; }
+
 .chrome-nav .mmenu .mm-primary { display: flex; flex-direction: column; }
 .chrome-nav .mmenu .mm-primary a {
-  font-size: 16px; padding: 13px 0;
-  border-bottom: 1px solid var(--line-2); color: var(--ink-2);
+  font-size: 26px; font-weight: 500; letter-spacing: -0.01em;
+  padding: 16px 0; border-bottom: 1px solid var(--line-2); color: var(--ink-2);
 }
-.chrome-nav .mmenu .mm-primary a.on { color: var(--ink); font-weight: 500; }
-.chrome-nav .mmenu .mm-sub { display: flex; flex-wrap: wrap; gap: 10px 20px; padding: 18px 0 4px; }
-.chrome-nav .mmenu .mm-foot {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line-2);
-  font-size: 14px; color: var(--ink-2);
+.chrome-nav .mmenu .mm-primary a.on { color: var(--ink); }
+
+.chrome-nav .mmenu .mm-sub { display: flex; flex-wrap: wrap; gap: 10px 20px; padding: 22px 0 4px; }
+
+/* Utilities row: GitHub + theme toggle always live here, since the header's
+   own GitHub icon is hidden for the whole collapsed range. The CTA is
+   duplicated from the header's slot (chrome.css hides one copy or the other
+   by width — see the 768px block below) rather than moved, so callers keep
+   passing #cta once. Search isn't duplicated here at all: it stays in the
+   header row at every width (see `.csearch-btn`'s own icon-only breakpoint),
+   so there is no drawer copy to hide or reveal. */
+.chrome-nav .mmenu .mm-tools { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+.chrome-nav .mmenu .mm-row { display: flex; gap: 12px; }
+.chrome-nav .mmenu .mm-gh,
+.chrome-nav .mmenu .mm-theme {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px;
+  height: 52px; border: 1px solid var(--line); border-radius: 12px;
+  font-family: var(--f); font-size: 15px; color: var(--ink-2);
+  background: none; cursor: pointer; transition: 0.15s;
+}
+.chrome-nav .mmenu .mm-gh:hover,
+.chrome-nav .mmenu .mm-theme:hover { border-color: var(--ink); color: var(--ink); }
+.chrome-nav .mmenu .mm-gh svg,
+.chrome-nav .mmenu .mm-theme svg { width: 16px; height: 16px; flex: none; }
+.chrome-nav .mmenu .mm-theme .moon { display: none; }
+html.dark .chrome-nav .mmenu .mm-theme .moon { display: block; }
+html.dark .chrome-nav .mmenu .mm-theme .sun { display: none; }
+.chrome-nav .mmenu .mm-cta { display: none; }
+.chrome-nav .mmenu .mm-cta a.pill,
+.chrome-nav .mmenu .mm-cta button.pill {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 52px; font-size: 15px;
 }
 
 /* The desktop bar needs 1150px to lay out without pushing the CTA off
    screen: 104 logo + 595 primary nav + 347 right group + gaps + 80 padding,
    measured in headless Chrome on bondy.io's widest bar (7 links, GitHub,
    search, theme toggle, CTA pill) at font-size 16px. Below that the bar
-   collapses to the hamburger rather than overflowing the viewport. */
+   collapses to the hamburger rather than overflowing the viewport. This
+   number is content-driven, not aesthetic — it stays the trigger for the
+   collapse even though 768px (below) is the "phone" query, because forcing
+   the collapse itself down to 768px would overflow that same measured
+   content between 768 and 1149px. */
 @media (max-width: 1149px) {
   .chrome-nav nav.primary,
   .chrome-nav .ghlink,
@@ -210,6 +485,29 @@ button.pill.ghost:hover { background: none; border-color: var(--ink); color: var
   .chrome-nav .mmenu { display: block; }
   .chrome-nav .r { gap: 14px; }
   .bondy-chrome .wrap { padding: 0 22px; }
+}
+/* Tablets keep the roomier desktop-ish inset: 22px reads fine on a 375px
+   phone, where every pixel of width is scarce, but on a 768-1024px canvas
+   it leaves the logo and the menu button looking pinned to the bezel with
+   nothing around them. 32px is still well short of the 40px desktop pads
+   (which have a full nav + search + CTA to justify the width) but gives the
+   collapsed bar's few remaining elements some breathing room. */
+@media (min-width: 769px) and (max-width: 1149px) {
+  .bondy-chrome .wrap { padding: 0 32px; }
+}
+
+/* Phones: the header row keeps the logo, search, theme toggle and menu
+   button. The CTA moves into the drawer instead of staying in the header,
+   because a CTA pill plus search plus the theme toggle plus the logo do not
+   fit beside each other at 375px — they'd either wrap or overflow. Search
+   stays regardless (see `.csearch-btn`'s icon-only rule below, which is what
+   actually buys it the room) since the placement brief calls it out as
+   needing to stay directly reachable without opening the drawer. The CTA
+   copy moved here already exists in the header's own slot content (#cta);
+   this only toggles which copy is visible. */
+@media (max-width: 768px) {
+  .chrome-nav .ccta { display: none; }
+  .chrome-nav .mmenu .mm-cta { display: block; }
 }
 
 /* ── footer ───────────────────────────────────────────────── */
@@ -298,45 +596,273 @@ button.pill.ghost:hover { background: none; border-color: var(--ink); color: var
 /* ── site-wide search (SiteSearch.vue) ────────────────────── */
 .chrome-nav .csearch-btn {
   display: flex; align-items: center; gap: 8px;
-  height: 32px; padding: 0 12px;
+  height: 32px; padding: 0 14px;
   border: 1px solid var(--line); border-radius: 100px;
   background: none; color: var(--ink-3); cursor: pointer;
-  font-family: var(--f); font-size: 13px; transition: 0.15s;
+  font-family: var(--f); font-size: 13px; transition: 0.15s; flex: none;
 }
-.chrome-nav .csearch-btn:hover { border-color: var(--ink); color: var(--ink); }
-.chrome-nav .csearch-btn svg { width: 14px; height: 14px; }
+.chrome-nav .csearch-btn:hover,
+.chrome-nav .csearch-btn[aria-expanded="true"] { border-color: var(--ink); color: var(--ink); }
+.chrome-nav .csearch-btn svg { width: 14px; height: 14px; flex: none; }
 
-.csearch-modal {
-  position: fixed; inset: 0; z-index: 200;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex; align-items: flex-start; justify-content: center;
-  padding: 12vh 20px 20px;
+/* Below 1024px the button collapses to an icon-only circle — the same
+   32px footprint as the GitHub and theme-toggle buttons either side of it
+   — so "Search" the word stops competing with the logo and burger for
+   room on a 375px row. This is also what keeps search reachable directly
+   on the bar down to phone width instead of retreating into the drawer:
+   see the placement brief's "Direct Accessibility" requirement and the
+   matching comment on `.chrome-nav .mmenu .mm-tools` above. */
+@media (max-width: 1024px) {
+  .chrome-nav .csearch-btn { width: 32px; padding: 0; justify-content: center; }
+  .chrome-nav .csearch-btn span { display: none; }
 }
+
+/* The expanded search surface is two different UI shapes depending on
+   viewport, not one shape resized: desktop gets a wide, sharp-cornered
+   glass panel anchored under the bar; 1024px and below gets a fixed bottom
+   sheet, because a floating dropdown card doesn't give touch targets or a
+   virtual keyboard enough room, and right-aligning a small card under an
+   icon (the old treatment) reads as an afterthought next to the persistent,
+   always-reachable search button the placement brief calls for. Shared
+   skeleton lives here; each shape's own position/size/chrome lives in its
+   own media query below so neither has to fight the other's assumptions. */
 .csearch-panel {
-  width: min(720px, 100%); max-height: 70vh; display: flex; flex-direction: column;
-  background: var(--paper); border: 1px solid var(--line); border-radius: 10px;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.28); overflow: hidden;
+  display: flex; flex-direction: column;
+  overflow: hidden; z-index: 10;
   font-family: var(--f); color: var(--ink);
 }
-.csearch-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line-2); }
+
+/* ── desktop: wide glass panel, not a pill ──────────────────
+   `position: absolute; top: 100%` against `.chrome-nav .top` (see that
+   rule's own `position: relative`) means it always sits exactly under
+   whatever the bar currently renders as — the flush 64px header, the
+   floating rounded pill once `.scrolled` adds its own padding-top and
+   shrinks `.top` to 56px, either of those plus a 42px subbar — with no JS
+   measurement and no jank on scroll, since it rides along with `.top`'s
+   own sticky position the same way `.top` already does.
+
+   880px, not the old 640px: a dropdown that size read as a small pill-ish
+   card floating under a pill-shaped button — two rounded capsules stacked,
+   which is exactly the "curved pill" look the brief asks off. Widening it
+   and dropping the radius to 12px (see below) turns it into its own
+   distinct shape: a proper panel, not a bigger button. */
+@media (min-width: 1025px) {
+  /* `.chrome-nav .csearch-panel`, not the bare class other rules in this
+     block use below — this rule is the one that sets `margin-inline`, and
+     the package-wide `.bondy-chrome * { margin: 0; ... }` reset matches
+     with the exact same specificity as a bare `.csearch-panel`. Same
+     specificity means source order decides, which isn't reliable across
+     bundlers/HMR, so the reset was silently winning and collapsing the
+     centering margins back to 0 (panel pinned flush left instead of
+     centered). Qualifying with the ancestor `.chrome-nav` outweighs the
+     reset outright, the same way `.chrome-nav .top` etc. already do
+     throughout this file. */
+  .chrome-nav .csearch-panel {
+    /* `left: 0; right: 0; margin-inline: auto` instead of the more usual
+       `left: 50%; transform: translateX(-50%)` — this element also carries
+       `backdrop-filter` (below), and putting a `transform` on the SAME
+       element that blurs is exactly the combination `.chrome-nav .mmenu`
+       and the mobile/tablet sheet below already had to avoid: on some
+       Chromium builds/GPUs a transformed element's backdrop-filter samples
+       incorrectly and renders as a flat tint with no blur at all, not a
+       subtly-wrong blur, so it doesn't show up on every machine that's
+       used to test this. Auto-margins center an absolutely positioned
+       element with a definite width (`width` below is always a resolved
+       length, never `auto`) without touching `transform`. */
+    position: absolute; top: calc(100% + 12px); left: 0; right: 0; margin-inline: auto;
+    width: min(880px, calc(100vw - 64px));
+    max-height: min(72vh, 620px);
+    background: var(--paper);
+    border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  /* Same 65%-paper/blur(18px)/saturate(160%) formula as `.chrome-nav .top`
+     and `.chrome-nav--sticky.scrolled .top` (and the mobile/tablet sheet
+     below), so the open panel reads as the same glass surface as the bar
+     it drops from rather than a separately-tuned surface.
+
+     `.chrome-nav .csearch-panel`, matching the base rule above — a bare
+     `.csearch-panel` here is LESS specific than that rule's own opaque
+     `background: var(--paper)` fallback (0,1,0) vs. (0,2,0)), so no amount
+     of source order lets it win: the panel would be stuck fully opaque,
+     with `backdrop-filter` computing but never visible behind a 100%-alpha
+     background painted on top of it. */
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .chrome-nav .csearch-panel {
+      background: color-mix(in srgb, var(--paper) 65%, transparent);
+      backdrop-filter: blur(18px) saturate(160%);
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+    }
+  }
+  /* Fade only, no translate — the resting position above is held by
+     `margin-inline: auto`, not a `transform`, so there's nothing an
+     enter/leave transform would need to agree with; adding one here would
+     just reintroduce the transform+backdrop-filter combination this panel
+     is otherwise avoiding. */
+  .csearch-enter-active,
+  .csearch-leave-active { transition: opacity 0.15s ease; }
+  .csearch-enter-from,
+  .csearch-leave-to { opacity: 0; }
+}
+
+/* ── mobile/tablet: fixed bottom sheet, not a shrunk copy of the
+   desktop panel ───────────────────────────────────────────
+   `position: fixed` docked to the viewport edges, independent of wherever
+   the bar and its glass pill currently sit, is what makes this a proper
+   sheet rather than a dropdown that happens to be full-width: it gives the
+   virtual keyboard the full remaining viewport height to push against, and
+   the touch targets below don't have to share room with a floating card's
+   own margins.
+
+   Same 65%-paper/blur(18px) formula as `.chrome-nav .top` (and, now, the
+   desktop panel above — it used to be a heavier, bespoke 82%/32px, tuned
+   back when it still floated directly over page content with no scrim of
+   its own, but that made it read as a separately-styled surface rather
+   than the same glass as the bar it drops from), so the open sheet reads
+   as the same glass surface as the bar above it. Getting there safely
+   means NOT animating this
+   element with `transform`, unlike the old slide: `.chrome-nav .mmenu`
+   already hit the Chromium/WebKit bug where animating `transform` and
+   `backdrop-filter` on the same element renders the blur against a stale,
+   partially-composited snapshot mid-transition. Animating `bottom` instead
+   (a layout-triggering property, not compositor-only) gives the same slide
+   without touching `transform`, so the blur stays correct throughout.
+
+   Capped at `calc(100dvh - 76px)` on top of the existing 86vh/720px caps —
+   64px header plus a 12px gap — so the sheet can never grow tall enough to
+   reach the bar's own row. Combined with the bar's z-index (see
+   `.chrome-nav--sticky`'s mobile rule) staying above this panel's, the
+   header stays on-screen and reachable for as long as the sheet is open,
+   which is the whole point of keeping search anchored in the header rather
+   than the drawer. */
+@media (max-width: 1024px) {
+  .csearch-panel {
+    position: fixed; inset: auto 0 0 0;
+    width: 100%;
+    max-height: min(86vh, 720px, calc(100dvh - 76px));
+    background: var(--paper);
+    border: 1px solid var(--line); border-bottom: none;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.22);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 1001;
+  }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .csearch-panel {
+      background: color-mix(in srgb, var(--paper) 65%, transparent);
+      backdrop-filter: blur(18px) saturate(160%);
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+    }
+  }
+  .csearch-grabber {
+    flex: none; width: 36px; height: 4px; margin: 10px auto 0;
+    border-radius: 3px; background: var(--line);
+  }
+  /* Slide via `bottom`, not `transform` (see the panel comment above) — the
+     sheet's resting position is flush against the bottom edge at `bottom:
+     0`, so entering/leaving from `bottom: -100%` reads as the sheet itself
+     sliding off the bottom of the screen rather than a card fading in
+     place. */
+  .csearch-enter-active,
+  .csearch-leave-active { transition: bottom 0.28s cubic-bezier(0.32, 0.72, 0, 1); }
+  .csearch-enter-from,
+  .csearch-leave-to { bottom: -100%; }
+}
+@media (min-width: 1025px) {
+  .csearch-grabber { display: none; }
+}
+
+/* Dimmed scrim behind the sheet — mobile/tablet only. Plain opacity, no
+   blur, so it never risks the same transform/backdrop-filter compositing
+   bug noted above (it isn't the element that moves, but keeping the rule
+   simple keeps it that way on purpose). A tap on it lands outside
+   `panelEl`, so `SiteSearch.vue`'s existing document-level mousedown
+   listener closes the sheet without this element needing a click handler
+   of its own.
+
+   `z-index: 999`, below the fixed mobile bar's own 1010 (see the matching
+   note on `.chrome-nav--sticky`): the scrim is teleported to `<body>`
+   alongside the panel, and sitting just under the bar keeps the header —
+   including the search button that opened this sheet — legible and
+   undimmed above it, rather than washing the whole viewport including the
+   bar the user would reach for to close it. */
+.csearch-backdrop { display: none; }
+@media (max-width: 1024px) {
+  .csearch-backdrop {
+    display: block; position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 999;
+  }
+  .csearch-backdrop-enter-active,
+  .csearch-backdrop-leave-active { transition: opacity 0.2s ease; }
+  .csearch-backdrop-enter-from,
+  .csearch-backdrop-leave-to { opacity: 0; }
+}
+
+/* `.csearch-panel .csearch-head`/`-msg`/`-results` rather than the bare
+   classes: these three set `padding`, and the package-wide
+   `.bondy-chrome * { padding: 0 }` reset (plus the marketing site's own
+   `.torso *` one) has the same (0,1,0) specificity as a bare class, so
+   whenever the panel is mounted inside `.chrome-nav` — the desktop dropdown
+   is — the reset can win and the text sits flush against the panel edge.
+   The panel is an ancestor wherever it's mounted (`<body>` on mobile, the
+   portal on desktop), so this outranks the reset in both. The other rules
+   below already carry an element selector (`h4`, `a`), which does. */
+.csearch-panel .csearch-head { display: flex; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--line-2); }
+/* `border: 0; background: none` alone doesn't fully undo `type="search"`:
+   Chrome/Safari's UA stylesheet gives it `-webkit-appearance: searchfield`,
+   a distinct native control with its own rounded inset chrome that keeps
+   rendering — including its own left inset — UNDER whatever author styles
+   are layered on. That native edge sat almost exactly where our own text
+   padding started, so the first character read as clipped by it. `appearance:
+   none` drops the native control entirely, leaving a plain text field that
+   actually obeys the border/background reset above it. The three
+   `::-webkit-search-*` rules strip the matching native decorations (a
+   second, unstyled magnifier glyph and clear button) that come bundled
+   with the same control and would otherwise survive the appearance reset. */
 .csearch-head input {
-  flex: 1; border: 0; background: none; outline: none;
+  flex: 1; min-width: 0; border: 0; background: none; outline: none;
+  appearance: none; -webkit-appearance: none;
   font-family: var(--f); font-size: 16px; color: var(--ink);
 }
-.csearch-head button {
-  border: 1px solid var(--line); border-radius: 6px; background: none;
-  color: var(--ink-3); cursor: pointer; font-family: var(--m); font-size: 10.5px; padding: 4px 7px;
+.csearch-head input::-webkit-search-decoration,
+.csearch-head input::-webkit-search-cancel-button,
+.csearch-head input::-webkit-search-results-button,
+.csearch-head input::-webkit-search-results-decoration { display: none; }
+.csearch-head input::placeholder { color: var(--ink-3); }
+/* An icon, not the old "Esc" text label: below 1024px there is no physical
+   Esc key to name, and a 28px square is a real touch target where the old
+   text pill wasn't. Keyboard users keep Esc too — `@keydown.esc="hide"` on
+   the input doesn't depend on this button's label. */
+.csearch-close {
+  flex: none; display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border: 1px solid var(--line); border-radius: 50%;
+  background: none; color: var(--ink-3); cursor: pointer; transition: 0.15s;
 }
-.csearch-msg { padding: 18px 16px; color: var(--ink-2); font-size: 14px; }
-.csearch-results { overflow-y: auto; padding: 6px 0 12px; }
+.csearch-close:hover { border-color: var(--ink); color: var(--ink); }
+.csearch-close svg { width: 13px; height: 13px; }
+@media (max-width: 1024px) {
+  .csearch-close { width: 36px; height: 36px; }
+  .csearch-close svg { width: 15px; height: 15px; }
+}
+.csearch-panel .csearch-msg { padding: 20px 18px; color: var(--ink-2); font-size: 14px; }
+.csearch-panel .csearch-results {
+  overflow-y: auto; padding: 6px 0 12px;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+}
 .csearch-results h4 {
   display: flex; align-items: center; gap: 8px;
   font-family: var(--m); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--ink-3); font-weight: 400; padding: 14px 16px 6px;
+  color: var(--ink-3); font-weight: 400; padding: 14px 18px 6px;
 }
 .csearch-results h4 span { color: var(--blue); letter-spacing: 0.06em; }
-.csearch-results a { display: block; padding: 9px 16px; color: var(--ink-2); text-decoration: none; }
+.csearch-results a { display: block; padding: 9px 18px; color: var(--ink-2); text-decoration: none; }
 .csearch-results a:hover { background: var(--paper-2); }
 .csearch-results a strong { display: block; color: var(--ink); font-weight: 500; font-size: 14.5px; }
 .csearch-results a span { display: block; font-size: 13px; line-height: 1.45; margin-top: 2px; }
 .csearch-results mark { background: var(--soft); color: inherit; }
+/* Taller rows under touch — the desktop 9px vertical padding is sized for
+   a mouse pointer's precision, not a fingertip. */
+@media (max-width: 1024px) {
+  .csearch-results a { padding: 13px 20px; }
+}
