@@ -50,7 +50,7 @@ const props = defineProps({
 })
 
 // `hidden` entries still resolve — the wordmark uses home — but stay out of
-// the bar, which is what keeps the bar at seven items as lines are added.
+// the bar, which is what keeps the bar short as lines are added.
 const links = computed(() => resolveLinks(props.self).filter((l) => !l.hidden))
 const homeHref = computed(() => resolveHome(props.self))
 

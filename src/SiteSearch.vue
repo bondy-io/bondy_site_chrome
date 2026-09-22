@@ -47,6 +47,14 @@ const groups = shallowRef([])
 const instances = shallowRef(null)
 let timer = null
 
+// Keyboard navigation. Real focus stays in the input the whole time (so you
+// can keep typing to refine the query) and `active` is an index into the
+// flattened hit list across every group — -1 means "nothing highlighted".
+// Exposed to assistive tech through aria-activedescendant on the input.
+const active = ref(-1)
+const flat = computed(() => groups.value.flatMap((g) => g.hits))
+const optId = (i) => `csearch-opt-${i}`
+
 // Ordered so this site's own results come first.
 const ordered = () => {
   const all = props.bundles ?? resolveBundles(props.self)
@@ -80,6 +88,7 @@ async function ensureLoaded() {
 
 async function run() {
   const q = term.value.trim()
+  active.value = -1
   if (!q) { groups.value = []; status.value = ''; return }
   if (!(await ensureLoaded())) return
 
@@ -92,13 +101,48 @@ async function run() {
       return { label: i.label, total: res.results.length, hits }
     })
   )
-  groups.value = out.filter((g) => g.hits.length)
+  // `start` is each group's offset into the flattened list, so a hit's
+  // global index is `g.start + j` in the template.
+  let start = 0
+  groups.value = out.filter((g) => g.hits.length).map((g) => {
+    const withStart = { ...g, start }
+    start += g.hits.length
+    return withStart
+  })
+  active.value = -1
   status.value = groups.value.length ? '' : 'No results.'
 }
 
 function onInput() {
   clearTimeout(timer)
+  active.value = -1
   timer = setTimeout(run, 180)
+}
+
+const resultsEl = ref(null)
+
+async function move(delta) {
+  const n = flat.value.length
+  if (!n) return
+  // Down from nothing lands on the first hit; Up from the first hit goes
+  // back to the input (-1); both ends stop rather than wrap.
+  active.value = Math.min(n - 1, Math.max(-1, active.value + delta))
+  await nextTick()
+  const el = resultsEl.value
+  if (!el) return
+  if (active.value <= 0) { el.scrollTop = 0; return }
+  el.querySelector(`#${optId(active.value)}`)?.scrollIntoView({ block: 'nearest' })
+}
+
+function onKeydown(e) {
+  if (e.key === 'ArrowDown') { e.preventDefault(); move(1) }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1) }
+  else if (e.key === 'Enter' && active.value >= 0) {
+    e.preventDefault()
+    const hit = flat.value[active.value]
+    if (hit) window.location.href = hit.url
+  }
+  else if (e.key === 'Escape') hide()
 }
 
 // A document-level listener drives outside-click-to-close at every width,
@@ -184,6 +228,7 @@ function hide() {
   open.value = false
   term.value = ''
   groups.value = []
+  active.value = -1
   status.value = ''
   document.removeEventListener('mousedown', onDocClick)
 }
@@ -247,22 +292,40 @@ onBeforeUnmount(() => {
             type="search"
             placeholder="Search all Bondy documentation…"
             aria-label="Search"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-controls="csearch-listbox"
+            :aria-expanded="flat.length > 0"
+            :aria-activedescendant="active >= 0 ? optId(active) : undefined"
             @input="onInput"
-            @keydown.esc="hide"
+            @keydown="onKeydown"
           />
           <button type="button" class="csearch-close" aria-label="Close search" @click="hide">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
         </div>
         <p v-if="status" class="csearch-msg">{{ status }}</p>
-        <div class="csearch-results">
-          <section v-for="g in groups" :key="g.label">
-            <h4>{{ g.label }} <span>{{ g.total }}</span></h4>
-            <a v-for="h in g.hits" :key="h.url" :href="h.url">
+        <div id="csearch-listbox" ref="resultsEl" class="csearch-results" role="listbox">
+          <!-- A `div`, not a `section`: the marketing site styles a bare
+               `.torso section` with 100px of vertical padding, which leaked
+               into every result group and pushed the first hit ~180px below
+               the input. -->
+          <div v-for="g in groups" :key="g.label" class="csearch-group" role="group" :aria-label="g.label">
+            <h4 aria-hidden="true">{{ g.label }} <span>{{ g.total }}</span></h4>
+            <a
+              v-for="(h, j) in g.hits"
+              :id="optId(g.start + j)"
+              :key="h.url"
+              :href="h.url"
+              role="option"
+              tabindex="-1"
+              :class="{ 'is-active': g.start + j === active }"
+              :aria-selected="g.start + j === active"
+            >
               <strong>{{ h.meta?.title || h.url }}</strong>
               <span v-html="h.excerpt" />
             </a>
-          </section>
+          </div>
         </div>
       </div>
     </Transition>

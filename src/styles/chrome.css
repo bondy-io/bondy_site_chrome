@@ -857,7 +857,10 @@ html.dark .chrome-nav .mmenu .mm-theme .sun { display: none; }
 }
 .csearch-results h4 span { color: var(--blue); letter-spacing: 0.06em; }
 .csearch-results a { display: block; padding: 9px 18px; color: var(--ink-2); text-decoration: none; }
-.csearch-results a:hover { background: var(--paper-2); }
+/* `.is-active` is the keyboard (and last-hovered) row — focus itself stays in
+   the input, so `:focus` can't be what highlights it. */
+.csearch-results a:hover,
+.csearch-results a.is-active { background: var(--paper-2); }
 .csearch-results a strong { display: block; color: var(--ink); font-weight: 500; font-size: 14.5px; }
 .csearch-results a span { display: block; font-size: 13px; line-height: 1.45; margin-top: 2px; }
 .csearch-results mark { background: var(--soft); color: inherit; }
