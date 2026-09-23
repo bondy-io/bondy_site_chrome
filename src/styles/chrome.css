@@ -15,7 +15,9 @@
   --paper-2: #e8e5e1;
   --ink: #0b0b0c;
   --ink-2: #4a4a4e;
-  --ink-3: #87847f;
+  /* Tertiary ink: small mono labels, dates, captions. Held at >= 4.5:1
+     (WCAG AA, small text) on both --paper (5.14:1) and --paper-2 (4.70:1). */
+  --ink-3: #656464;
   --acc-l: #14705f;
   --acc-d: #5fd6b4;
   --blue: var(--acc-l);
@@ -43,7 +45,8 @@ html.dark {
   --paper-2: #16181a;
   --ink: #eeece8;
   --ink-2: #a6a49f;
-  --ink-3: #6f6d69;
+  /* >= 4.5:1 on --paper (4.94:1) and --paper-2 (4.52:1). */
+  --ink-3: #82807c;
   --line: #2a2c2e;
   --line-2: #1d1f21;
   --blue: var(--acc-d);
@@ -343,7 +346,7 @@ button.pill.ghost:hover { background: none; border-color: var(--ink); color: var
 
 /* Version chip, rendered into the subbar slot. */
 .chrome-nav .ver {
-  font-family: var(--m); font-size: 11px; letter-spacing: 0.08em;
+  font-family: var(--m); font-size: 12px; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--ink-3); white-space: nowrap;
 }
 .chrome-nav .ver b { color: var(--blue); font-weight: 500; }
@@ -360,7 +363,7 @@ button.pill.ghost:hover { background: none; border-color: var(--ink); color: var
 .chrome-nav .subbar nav::-webkit-scrollbar { display: none; }
 .chrome-nav .subbar nav a,
 .chrome-nav .subbar .mono {
-  font-family: var(--m); font-size: 10.5px; letter-spacing: 0.12em;
+  font-family: var(--m); font-size: 12px; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--ink-3); white-space: nowrap;
 }
 .chrome-nav .subbar nav a:hover { color: var(--blue); }
@@ -519,7 +522,7 @@ html.dark .chrome-nav .mmenu .mm-theme .sun { display: none; }
    reference's five-column footer exactly. */
 .chrome-foot .fgrid.has-extra { grid-template-columns: 1.4fr repeat(3, 1fr) 1.4fr; }
 .chrome-foot .fgrid h5 {
-  font-family: var(--m); font-size: 10.5px; letter-spacing: 0.14em;
+  font-family: var(--m); font-size: 12px; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--ink-3); margin-bottom: 18px; font-weight: 400;
 }
 .chrome-foot .fgrid ul {
@@ -531,7 +534,7 @@ html.dark .chrome-nav .mmenu .mm-theme .sun { display: none; }
 .chrome-foot .fbot {
   display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;
   margin-top: 60px; padding-top: 22px; border-top: 1px solid var(--line-2);
-  font-family: var(--m); font-size: 10.5px; letter-spacing: 0.06em; color: var(--ink-3);
+  font-family: var(--m); font-size: 12px; letter-spacing: 0.06em; color: var(--ink-3);
 }
 @media (max-width: 860px) {
   .chrome-foot .fgrid,
@@ -852,7 +855,7 @@ html.dark .chrome-nav .mmenu .mm-theme .sun { display: none; }
 }
 .csearch-results h4 {
   display: flex; align-items: center; gap: 8px;
-  font-family: var(--m); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  font-family: var(--m); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
   color: var(--ink-3); font-weight: 400; padding: 14px 18px 6px;
 }
 .csearch-results h4 span { color: var(--blue); letter-spacing: 0.06em; }
