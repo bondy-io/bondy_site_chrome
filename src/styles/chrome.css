@@ -464,6 +464,12 @@ button.pill.ghost:hover { background: none; border-color: var(--ink); color: var
 .chrome-nav .mmenu .mm-theme .moon { display: none; }
 html.dark .chrome-nav .mmenu .mm-theme .moon { display: block; }
 html.dark .chrome-nav .mmenu .mm-theme .sun { display: none; }
+/* Both labels are rendered and html.dark picks one, like the icons above:
+   the server renders before the appearance is known, so a label computed
+   from `isDark` rendered "Dark mode" and failed hydration in night mode. */
+.chrome-nav .mmenu .mm-theme .to-light { display: none; }
+html.dark .chrome-nav .mmenu .mm-theme .to-light { display: inline; }
+html.dark .chrome-nav .mmenu .mm-theme .to-dark { display: none; }
 .chrome-nav .mmenu .mm-cta { display: none; }
 .chrome-nav .mmenu .mm-cta a.pill,
 .chrome-nav .mmenu .mm-cta button.pill {

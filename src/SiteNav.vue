@@ -279,7 +279,8 @@ onBeforeUnmount(() => {
               <button class="mm-theme" type="button" @click="isDark = !isDark">
                 <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4L17 7M7 17l-1.6 1.6"/></svg>
                 <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.3 8.3 0 1 0 10.5 10.5z"/></svg>
-                <span>{{ isDark ? 'Light mode' : 'Dark mode' }}</span>
+                <span class="to-dark">Dark mode</span>
+                <span class="to-light">Light mode</span>
               </button>
             </div>
             <div v-if="$slots.cta" class="mm-cta"><slot name="cta" /></div>
