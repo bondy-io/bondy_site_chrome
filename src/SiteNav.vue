@@ -194,7 +194,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="bondy-chrome chrome-nav" :class="[`chrome-nav--${layout}`, { scrolled }]">
+  <!-- <header>: the page's banner landmark, so the wordmark and the bar's
+       icon links sit inside a landmark with the primary <nav> (axe `region`).
+       Styled by class only, so the element change is invisible. -->
+  <header class="bondy-chrome chrome-nav" :class="[`chrome-nav--${layout}`, { scrolled }]">
     <div class="top">
       <div class="wrap">
         <a :href="homeHref" class="lg" aria-label="Bondy home"><BondyWordmark /></a>
@@ -290,7 +293,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
-  </div>
+  </header>
 
   <!-- Stands in for the height `position: fixed` (see chrome.css, applied to
        the `sticky` layout at <=1024px) takes out of flow. Not needed for

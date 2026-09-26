@@ -36,7 +36,7 @@ defineProps({
             <slot name="blurb" />
           </div>
           <div v-for="col in columns" :key="col.title">
-            <h5>{{ col.title }}</h5>
+            <h2>{{ col.title }}</h2>
             <ul>
               <li v-for="l in col.links" :key="l.text">
                 <a :href="l.href">{{ l.text }}</a>

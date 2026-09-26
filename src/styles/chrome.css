@@ -527,7 +527,10 @@ html.dark .chrome-nav .mmenu .mm-theme .to-dark { display: none; }
    rather than a prop so the caller cannot forget it. Matches the torso
    reference's five-column footer exactly. */
 .chrome-foot .fgrid.has-extra { grid-template-columns: 1.4fr repeat(3, 1fr) 1.4fr; }
-.chrome-foot .fgrid h5 {
+/* Column titles are <h2>: each opens a top-level section of the footer, and
+   an <h5> after a page's last <h2> skipped two levels (Lighthouse
+   heading-order). The look stays the small mono label. */
+.chrome-foot .fgrid h2 {
   font-family: var(--m); font-size: 13px; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--ink-2); margin-bottom: 18px; font-weight: 400;
 }
