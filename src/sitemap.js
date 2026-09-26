@@ -71,10 +71,13 @@ export const SITE_LINKS = [
  * configured or operated. It is also where BAMP will slot in, as a fourth
  * entry and no other change.
  */
-export const DOC_SETS = [,
+export const DOC_SETS = [
   {
     id: 'lang-docs',
     text: 'Bondy Language',
+    // Private until the language launches (21 Oct 2026): lang.bondy.io does
+    // not resolve before then. Set true on launch day — see `released` below.
+    released: false,
     blurb: 'The Bondy language reference documentation, generated from source.',
     group: 'language',
     site: 'lang',
@@ -114,8 +117,16 @@ export const DOC_SETS = [,
 export const SEARCH_BUNDLES = [
   { id: 'website', label: 'bondy.io', site: 'website' },
   { id: 'docs', label: 'Docs', site: 'docs' },
-  { id: 'lang', label: 'Language docs', site: 'lang' }
+  // Private until the language launches, like the lang-docs set above.
+  { id: 'lang', label: 'Language docs', site: 'lang', released: false }
 ]
+
+/**
+ * `released: false` keeps an entry out of every resolved list — the portal,
+ * search — until its property is public, so no site links to a host that
+ * does not answer yet. Absent means released.
+ */
+const isReleased = (e) => e.released !== false
 
 /**
  * Resolve an entry's href for the property doing the rendering.
@@ -138,7 +149,7 @@ export function resolveHome(self = 'website') {
 }
 
 export function resolveDocSets(self = 'website') {
-  return DOC_SETS.map((d) => ({ ...d, href: href(d, self) }))
+  return DOC_SETS.filter(isReleased).map((d) => ({ ...d, href: href(d, self) }))
 }
 
 /** Human labels for the DOC_SETS groups, in display order. */
@@ -165,7 +176,7 @@ export function resolveDocGroups(self = 'website') {
  * are absolute and depend on the CORS headers described above.
  */
 export function resolveBundles(self = 'website') {
-  return SEARCH_BUNDLES.map((b) => {
+  return SEARCH_BUNDLES.filter(isReleased).map((b) => {
     const origin = b.site === self ? '' : ORIGINS[b.site]
     return { ...b, bundlePath: `${origin}/pagefind/`, baseUrl: `${origin}/` }
   })
