@@ -708,46 +708,54 @@ html.dark .chrome-nav .mmenu .mm-theme .sun { display: none; }
   .csearch-leave-to { opacity: 0; }
 }
 
-/* ── mobile/tablet: fixed bottom sheet, not a shrunk copy of the
+/* ── mobile/tablet: top-anchored sheet, not a shrunk copy of the
    desktop panel ───────────────────────────────────────────
-   `position: fixed` docked to the viewport edges, independent of wherever
-   the bar and its glass pill currently sit, is what makes this a proper
-   sheet rather than a dropdown that happens to be full-width: it gives the
-   virtual keyboard the full remaining viewport height to push against, and
-   the touch targets below don't have to share room with a floating card's
-   own margins.
+   `position: fixed` docked to the viewport's top and side edges just under
+   the 64px header, independent of wherever the bar and its glass pill
+   currently sit, is what makes this a proper full-width sheet rather than a
+   dropdown that happens to be wide. The touch targets below don't have to
+   share room with a floating card's own margins.
 
-   Same 65%-paper/blur(18px) formula as `.chrome-nav .top` (and, now, the
-   desktop panel above — it used to be a heavier, bespoke 82%/32px, tuned
-   back when it still floated directly over page content with no scrim of
-   its own, but that made it read as a separately-styled surface rather
-   than the same glass as the bar it drops from), so the open sheet reads
-   as the same glass surface as the bar above it. Getting there safely
-   means NOT animating this
-   element with `transform`, unlike the old slide: `.chrome-nav .mmenu`
-   already hit the Chromium/WebKit bug where animating `transform` and
-   `backdrop-filter` on the same element renders the blur against a stale,
-   partially-composited snapshot mid-transition. Animating `bottom` instead
-   (a layout-triggering property, not compositor-only) gives the same slide
-   without touching `transform`, so the blur stays correct throughout.
+   Top-anchored, NOT bottom-docked (it used to be a bottom sheet): the
+   on-screen keyboard rises from the bottom edge, so a bottom-docked sheet
+   is exactly the thing it lands on. The input sat at the sheet's top, the
+   sheet was sized for a screen with no keyboard, and the browser panned the
+   view to keep the focused input visible — which slid the input and the top
+   results up under the fixed header while the rest hid behind the keys.
+   Docked under the header, the input is always in the same on-screen spot,
+   so the browser has nothing to pan to, and the keyboard only ever affects
+   how much of the results list is visible below it.
 
-   Capped at `calc(100dvh - 76px)` on top of the existing 86vh/720px caps —
-   64px header plus a 12px gap — so the sheet can never grow tall enough to
-   reach the bar's own row. Combined with the bar's z-index (see
-   `.chrome-nav--sticky`'s mobile rule) staying above this panel's, the
-   header stays on-screen and reachable for as long as the sheet is open,
-   which is the whole point of keeping search anchored in the header rather
-   than the drawer. */
+   The height cap therefore has to follow the keyboard: `--csearch-vv-bottom`
+   is where the visible area ends, published from `window.visualViewport` by
+   SiteSearch.vue while the sheet is open (`vh`/`dvh` do not shrink for the
+   keyboard on iOS or by default on Chrome for Android). `100dvh` is the
+   fallback for browsers without `visualViewport`, and before the first
+   measurement. Minus the 64px header, and 8px so the list never butts
+   against the keyboard's edge. The 720px cap stops a tablet's sheet growing
+   to the full screen height when there is no keyboard.
+
+   Same 65%-paper/blur(18px) formula as `.chrome-nav .top` (and the desktop
+   panel above), so the open sheet reads as the same glass surface as the bar
+   it hangs from. Getting there safely means NOT animating this element with
+   `transform`: `.chrome-nav .mmenu` already hit the Chromium/WebKit bug where
+   animating `transform` and `backdrop-filter` on the same element renders the
+   blur against a stale, partially-composited snapshot mid-transition. Fade
+   only, like the desktop panel.
+
+   The bar's z-index (see `.chrome-nav--sticky`'s mobile rule) stays above
+   this panel's, so the header remains on-screen and reachable for as long as
+   the sheet is open — which is the point of keeping search anchored in the
+   header rather than the drawer. */
 @media (max-width: 1024px) {
   .csearch-panel {
-    position: fixed; inset: auto 0 0 0;
+    position: fixed; top: 64px; left: 0; right: 0;
     width: 100%;
-    max-height: min(86vh, 720px, calc(100dvh - 76px));
+    max-height: min(720px, calc(var(--csearch-vv-bottom, 100dvh) - 64px - 8px));
     background: var(--paper);
-    border: 1px solid var(--line); border-bottom: none;
-    border-radius: 16px 16px 0 0;
-    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.22);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border: 1px solid var(--line); border-top: none;
+    border-radius: 0 0 16px 16px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
     z-index: 1001;
   }
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
@@ -757,22 +765,10 @@ html.dark .chrome-nav .mmenu .mm-theme .sun { display: none; }
       -webkit-backdrop-filter: blur(18px) saturate(160%);
     }
   }
-  .csearch-grabber {
-    flex: none; width: 36px; height: 4px; margin: 10px auto 0;
-    border-radius: 3px; background: var(--line);
-  }
-  /* Slide via `bottom`, not `transform` (see the panel comment above) — the
-     sheet's resting position is flush against the bottom edge at `bottom:
-     0`, so entering/leaving from `bottom: -100%` reads as the sheet itself
-     sliding off the bottom of the screen rather than a card fading in
-     place. */
   .csearch-enter-active,
-  .csearch-leave-active { transition: bottom 0.28s cubic-bezier(0.32, 0.72, 0, 1); }
+  .csearch-leave-active { transition: opacity 0.18s ease; }
   .csearch-enter-from,
-  .csearch-leave-to { bottom: -100%; }
-}
-@media (min-width: 1025px) {
-  .csearch-grabber { display: none; }
+  .csearch-leave-to { opacity: 0; }
 }
 
 /* Dimmed scrim behind the sheet — mobile/tablet only. Plain opacity, no

@@ -34,6 +34,7 @@ import { computed, ref, watch, onMounted, onBeforeUnmount, provide } from 'vue'
 import { useData, useRoute } from 'vitepress'
 import { resolveLinks, resolveHome, GITHUB } from './sitemap.js'
 import BondyWordmark from './BondyWordmark.vue'
+import { lockScroll, unlockScroll, holdsLock } from './scrollLock.js'
 
 const props = defineProps({
   /** id from SITE_LINKS marking which section this site is. */
@@ -84,56 +85,15 @@ provide('searchPortalEl', searchPortal)
 // Close the burger on navigation.
 watch(() => route.path, () => (open.value = false))
 
-// Lock page scroll behind the full-screen drawer. Guarded for SSR, where
-// `open` never actually flips, but a shared package should not assume a DOM.
-//
-// Pins `body` with `position: fixed` at the negative scroll offset, rather
-// than the simpler `documentElement.style.overflow = 'hidden'`. iOS Safari
-// has a long-standing bug where `overflow: hidden` on `html` doesn't reliably
-// stop background touch-scroll — the page behind the drawer can still creep,
-// which drags the drawer's own `position: fixed` box out of registration
-// with the viewport mid-scroll and reads as the menu clipping or tearing.
-// Fixing `body` in place sidesteps that: there's nothing left for a stray
-// touch to scroll. `scrollY` is saved so closing can restore the exact
-// reading position instead of jumping to the top.
-//
-// Pinning `body` also removes the document's own scrollbar, which on a
-// non-overlay-scrollbar platform (Windows/Linux desktop Chrome, tablets with
-// a mouse) widens the sticky/fixed bar's containing block by the scrollbar's
-// track the instant the drawer opens — the bar has no scrollbar to lay out
-// next to any more, so it claims that width, and its right-aligned icons
-// (search, GitHub, theme toggle) jump sideways. `--chrome-sbw`, read by
-// `.chrome-nav--sticky`/`--docs` in chrome.css, compensates with matching
-// right padding for exactly as long as the drawer is open, so the bar's
-// visible width — and the icons' position — never changes.
-//
-// Lock and unlock are idempotent and unlock can run synchronously (see
-// `onMenuClick`), so the `open` watcher below and a link click can both call
-// them without the second call re-scrolling to a stale position.
-let savedScrollY = 0
-let locked = false
-function lockScroll() {
-  if (locked || typeof document === 'undefined') return
-  locked = true
-  const sbw = window.innerWidth - document.documentElement.clientWidth
-  document.documentElement.style.setProperty('--chrome-sbw', `${sbw}px`)
-  savedScrollY = window.scrollY
-  document.body.style.position = 'fixed'
-  document.body.style.top = `-${savedScrollY}px`
-  document.body.style.left = '0'
-  document.body.style.right = '0'
-}
-function unlockScroll() {
-  if (!locked || typeof document === 'undefined') return
-  locked = false
-  document.body.style.position = ''
-  document.body.style.top = ''
-  document.body.style.left = ''
-  document.body.style.right = ''
-  document.documentElement.style.removeProperty('--chrome-sbw')
-  window.scrollTo(0, savedScrollY)
-}
-watch(open, (v) => (v ? lockScroll() : unlockScroll()))
+// Lock page scroll behind the full-screen drawer (see scrollLock.js for how
+// and why `body` is pinned). Guarded for SSR inside the helper, where `open`
+// never actually flips, but a shared package should not assume a DOM.
+// Unlock can run synchronously (see `onMenuClick`), so the `open` watcher
+// below and a link click can both call it safely.
+const lockOwner = Symbol('drawer')
+const lock = () => lockScroll(lockOwner)
+const unlock = () => unlockScroll(lockOwner)
+watch(open, (v) => (v ? lock() : unlock()))
 
 // Closes the drawer when any link inside it is followed. A `#section` link
 // (the CTA pill, the `mobileExtra` links) doesn't change `route.path`, so the
@@ -164,9 +124,9 @@ function onMenuClick(e) {
   if (replaying) return
   const a = e.target.closest?.('a')
   if (!a || a.target === '_blank') return
-  const wasLocked = locked
+  const wasLocked = holdsLock(lockOwner)
   open.value = false
-  unlockScroll()
+  unlock()
   if (wasLocked && a.hash && a.origin === location.origin && a.pathname === location.pathname) {
     replaying = true
     a.click()
