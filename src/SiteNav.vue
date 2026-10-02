@@ -1,10 +1,10 @@
 <!-- The Bondy top bar, worn by every Bondy property.
      
      Primary row: wordmark · the canonical site sections (see sitemap.js) ·
-     search, GitHub, night toggle and an optional call-to-action. Optional
-     secondary row via the `subbar` slot — the marketing site puts page
-     section links there, the docs sites a breadcrumb and version picker.
-     Under 1149px both rows collapse into a full-screen burger drawer; under
+     search, GitHub, night toggle and an optional call-to-action. One row
+     only: page-level context such as a breadcrumb or a version picker
+     belongs with the page, not in the site-wide bar.
+     Under 1149px the row collapses into a full-screen burger drawer; under
      768px the drawer also absorbs the CTA from the header row, since it
      doesn't fit beside the logo and toggle at phone widths. Search stays in
      the header at every width instead — chrome.css shrinks it to an
@@ -16,7 +16,6 @@
 
        #search   the site's own search box (Algolia, Pagefind, ...)
        #cta      a call-to-action pill
-       #subbar   the secondary row's contents
 
      `layout` picks how the bar sits:
 
@@ -134,10 +133,10 @@ function onMenuClick(e) {
   }
 }
 
-// Drives the desktop-only scroll-to-pill effect in chrome.css (see
-// `.chrome-nav--sticky.scrolled`). The class is harmless on the docs layout
-// and on mobile — both scope the pill CSS out entirely — so this listener
-// doesn't need to know which layout or width it's running under.
+// Drives the desktop-only scroll-to-pill effect in chrome.css (see the
+// "scroll-triggered pill" block), on both layouts. The class is harmless at
+// 1024px and below, where that block doesn't apply, so this listener doesn't
+// need to know which width it's running under.
 const scrolled = ref(false)
 function updateScrolled() {
   scrolled.value = window.scrollY > 50
@@ -199,9 +198,6 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <div v-if="$slots.subbar" class="subbar">
-        <div class="wrap"><slot name="subbar" /></div>
-      </div>
     </div>
 
     <!-- See the comment on `searchPortal` above — SiteSearch teleports its

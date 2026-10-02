@@ -158,10 +158,9 @@ html.dark {
 /* Torso-style glass bar: a hairline border plus a translucent, blurred
    surface so page content reads faintly through the bar on scroll. Layered
    behind an @supports check so browsers without backdrop-filter just keep
-   the solid --paper fill declared above. This is the PERMANENT bar look —
-   the docs bar keeps exactly this at every width and scroll position, since
-   shrinking it would have to also shrink --vp-nav-height mid-scroll and
-   drag every VitePress offset (sidebar, content, curtain) along with it. */
+   the solid --paper fill declared above. This is the bar's look at 1024px
+   and below; wider, the pill block below starts it transparent and floats
+   it once the page scrolls. */
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
   .chrome-nav .top {
     background: color-mix(in srgb, var(--paper) 65%, transparent);
@@ -171,7 +170,7 @@ html.dark {
 }
 .chrome-nav .top > .wrap { display: flex; align-items: center; gap: 32px; height: 64px; }
 
-/* ── scroll-triggered pill (sticky/marketing layout, desktop only) ──
+/* ── scroll-triggered pill (both layouts, desktop only) ──
    Phone AND tablet get none of this: the rules below live entirely inside
    the 1025px+ query, so anything at or below 1024px keeps the plain,
    permanently-visible, permanently-fixed bar declared above with zero added
@@ -191,15 +190,20 @@ html.dark {
    flush at the very top with its rounded top corners cut clean off by the
    viewport edge, which is the "can't see the entire thing" cropping.
    Padding on the parent is never eligible to collapse, so it always
-   renders as real, visible space. */
+   renders as real, visible space.
+
+   The docs layout floats the same way without moving VitePress: its outer
+   box is `position: fixed` at this width, so the padding and the shrinking
+   `.top` change nothing in flow, and --vp-nav-height (declared in the
+   VitePress integration section) stays 64px at every scroll position. */
 @media (min-width: 1025px) {
-  .chrome-nav--sticky {
+  :is(.chrome-nav--sticky, .chrome-nav--docs) {
     padding-top: 0;
     transition: padding-top 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .chrome-nav--sticky.scrolled { padding-top: 14px; }
+  :is(.chrome-nav--sticky, .chrome-nav--docs).scrolled { padding-top: 14px; }
 
-  .chrome-nav--sticky .top {
+  :is(.chrome-nav--sticky, .chrome-nav--docs) .top {
     background: transparent;
     border-bottom-color: transparent;
     margin: 0 auto;
@@ -218,16 +222,16 @@ html.dark {
       max-width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   }
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    .chrome-nav--sticky .top { backdrop-filter: none; -webkit-backdrop-filter: none; }
+    :is(.chrome-nav--sticky, .chrome-nav--docs) .top { backdrop-filter: none; -webkit-backdrop-filter: none; }
   }
-  .chrome-nav--sticky .top > .wrap {
+  :is(.chrome-nav--sticky, .chrome-nav--docs) .top > .wrap {
     transition:
       height 0.8s cubic-bezier(0.4, 0, 0.2, 1),
       gap 0.8s cubic-bezier(0.4, 0, 0.2, 1),
       padding 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .chrome-nav--sticky .top nav.primary,
-  .chrome-nav--sticky .top .r {
+  :is(.chrome-nav--sticky, .chrome-nav--docs) .top nav.primary,
+  :is(.chrome-nav--sticky, .chrome-nav--docs) .top .r {
     transition: gap 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
@@ -253,7 +257,7 @@ html.dark {
      content it has to hold. 1180px is the same content requirement plus a
      few px of breathing room. The padding/gap reductions just below claw
      back some of the "compact" feeling that losing 140px of cap gives up. */
-  .chrome-nav--sticky.scrolled .top {
+  :is(.chrome-nav--sticky, .chrome-nav--docs).scrolled .top {
     width: calc(100% - 48px);
     max-width: 1180px;
     border-radius: 999px;
@@ -262,27 +266,27 @@ html.dark {
     box-shadow: 0 10px 34px rgba(0, 0, 0, 0.14);
   }
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    .chrome-nav--sticky.scrolled .top {
+    :is(.chrome-nav--sticky, .chrome-nav--docs).scrolled .top {
       backdrop-filter: blur(18px) saturate(160%);
       -webkit-backdrop-filter: blur(18px) saturate(160%);
     }
   }
-  .chrome-nav--sticky.scrolled .top > .wrap {
+  :is(.chrome-nav--sticky, .chrome-nav--docs).scrolled .top > .wrap {
     height: 56px;
     gap: 22px;
     padding-left: 28px;
     padding-right: 28px;
   }
-  .chrome-nav--sticky.scrolled .top nav.primary { gap: 20px; }
-  .chrome-nav--sticky.scrolled .top .r { gap: 14px; }
+  :is(.chrome-nav--sticky, .chrome-nav--docs).scrolled .top nav.primary { gap: 20px; }
+  :is(.chrome-nav--sticky, .chrome-nav--docs).scrolled .top .r { gap: 14px; }
 }
 
 /* Belt and braces: if a viewport crosses the 1024px line while `.scrolled`
    is already set (rotation, or a resize mid-scroll), the pill must not
    persist into the phone/tablet layout. */
 @media (max-width: 1024px) {
-  .chrome-nav--sticky.scrolled { padding-top: 0; }
-  .chrome-nav--sticky.scrolled .top {
+  :is(.chrome-nav--sticky, .chrome-nav--docs).scrolled { padding-top: 0; }
+  :is(.chrome-nav--sticky, .chrome-nav--docs).scrolled .top {
     width: 100%; max-width: none; border-radius: 0; box-shadow: none;
   }
 }
@@ -344,30 +348,6 @@ button.pill.ghost { background: none; color: var(--ink); border: 1px solid var(-
 a.pill.ghost:hover,
 button.pill.ghost:hover { background: none; border-color: var(--ink); color: var(--ink); }
 
-/* Version chip, rendered into the subbar slot. */
-.chrome-nav .ver {
-  font-family: var(--m); font-size: 13px; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--ink-2); white-space: nowrap;
-}
-.chrome-nav .ver b { color: var(--blue); font-weight: 500; }
-.chrome-nav .subbar .ver { margin-left: auto; }
-
-/* ── secondary row ────────────────────────────────────────── */
-.chrome-nav .subbar {
-  background: var(--paper);
-  border-top: 1px solid var(--line-2);
-  border-bottom: 1px solid var(--line);
-}
-.chrome-nav .subbar .wrap { display: flex; align-items: center; gap: 24px; height: 42px; }
-.chrome-nav .subbar nav { display: flex; gap: 22px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.chrome-nav .subbar nav::-webkit-scrollbar { display: none; }
-.chrome-nav .subbar nav a,
-.chrome-nav .subbar .mono {
-  font-family: var(--m); font-size: 13px; letter-spacing: 0.12em;
-  text-transform: uppercase; color: var(--ink-2); white-space: nowrap;
-}
-.chrome-nav .subbar nav a:hover { color: var(--blue); }
-
 /* ── burger + full-screen drawer ──────────────────────────── */
 .chrome-nav .mbtn {
   display: none; flex-direction: column; justify-content: center; gap: 4px;
@@ -377,8 +357,7 @@ button.pill.ghost:hover { background: none; border-color: var(--ink); color: var
 
 /* Sibling of `.chrome-nav--sticky`, not a child — `position: fixed` above
    takes the bar out of flow at phone AND tablet widths, so this stands in
-   for the 64px (subbar is already hidden at this width, see the 1149px
-   block below) it used to occupy, keeping page content from sliding under
+   for the 64px it used to occupy, keeping page content from sliding under
    it. Unused at >=1025px, where the bar is still `position: sticky` and
    needs no stand-in. */
 .chrome-nav-spacer { display: none; }
@@ -387,11 +366,10 @@ button.pill.ghost:hover { background: none; border-color: var(--ink); color: var
 }
 
 /* The drawer is a fixed, full-height overlay pinned under the 64px header
-   row (the subbar is already display:none whenever the drawer can open, so
-   64px is the header's true height at every width below), not a dropdown
-   panel — large touch typography needs the vertical room a panel can't
-   give without shoving page content down. `.mm-scroll` carries the
-   scrolling so the drawer itself can stay a plain positioned box. */
+   row, not a dropdown panel — large touch typography needs the vertical
+   room a panel can't give without shoving page content down. `.mm-scroll`
+   carries the scrolling so the drawer itself can stay a plain positioned
+   box. */
 /* Opacity-only fade — no `transform`. A `transform` transitioning on the
    SAME element as `backdrop-filter` is a known Chromium/WebKit compositing
    bug: the blur gets composited against a stale/partial snapshot of what's
@@ -488,8 +466,7 @@ html.dark .chrome-nav .mmenu .mm-theme .to-dark { display: none; }
    content between 768 and 1149px. */
 @media (max-width: 1149px) {
   .chrome-nav nav.primary,
-  .chrome-nav .ghlink,
-  .chrome-nav .subbar { display: none; }
+  .chrome-nav .ghlink { display: none; }
   .chrome-nav .mbtn { display: flex; }
   .chrome-nav .mmenu { display: block; }
   .chrome-nav .r { gap: 14px; }
@@ -552,47 +529,15 @@ html.dark .chrome-nav .mmenu .mm-theme .to-dark { display: none; }
 
 /* ── VitePress integration (layout="docs") ────────────────── */
 /* The bar replaces VPNav, so its height must be declared as --vp-nav-height
-   or every VitePress offset (sidebar, content, local nav) is wrong. 64px bar,
-   plus 42px when a subbar slot is filled. :has() reads that off the rendered
-   chrome so a docs site never has to hand-maintain the number. */
+   or every VitePress offset (sidebar, content, local nav) is wrong. It is
+   64px at every scroll position: the desktop pill floats inside a fixed box
+   and never changes the space the bar reserves. */
 @media (min-width: 960px) {
   :root:has(.chrome-nav--docs) { --vp-nav-height: 64px; }
-}
-/* The subbar only renders above the bar's own breakpoint, so the extra
-   42px is claimed there too — otherwise the content sits 42px low
-   wherever the subbar is display:none. */
-@media (min-width: 1150px) {
-  :root:has(.chrome-nav--docs .subbar) { --vp-nav-height: 106px; }
 }
 :root:has(.chrome-nav--docs) .VPNav { display: none; }
 /* The sidebar must sit above the fixed bar's shadow. */
 :root:has(.chrome-nav--docs) .VPSidebar { z-index: 50; }
-
-/* Raising --vp-nav-height above 64px breaks VitePress's sidebar curtain — the
-   opaque strip that masks sidebar content scrolling under the nav — so it has
-   to be repaired here, next to the declaration that causes it.
-
-   VitePress gives the curtain height and margin from the variable but pins it
-   with a hardcoded offset:
-
-       height: var(--vp-nav-height);  margin-top: calc(var(--vp-nav-height) * -1);
-       position: sticky;  top: -64px;
-
-   A sticky offset resolves against the scrollport's CONTENT box, which starts
-   at .VPSidebar's padding-top — also var(--vp-nav-height). At the stock 64px
-   the two cancel, the curtain pins at 0 and covers exactly the strip behind
-   the nav. At 106px it pins at 106 - 64 = 42px and covers 42..148px, and
-   since it carries z-index 1 and the sidebar background it paints over the
-   first group heading of every sidebar.
-
-   Measured in headless Chrome at 1440x900 on a built docs site: bar 0..109,
-   curtain 42..148, first group heading 116..141 and hit-tested as covered by
-   .curtain. Deriving the offset from the same variable restores the invariant
-   (pin position 0); re-measured after the change, curtain 0..106 and the
-   heading hit-tests as itself. */
-:root:has(.chrome-nav--docs) .VPSidebar .curtain {
-  top: calc(var(--vp-nav-height) * -1);
-}
 
 /* A docs footer is a sibling of VitePress's Layout, not inside its content
    column, so it clears the sidebar the same way the content does. */
@@ -649,7 +594,7 @@ html.dark .chrome-nav .mmenu .mm-theme .to-dark { display: none; }
    rule's own `position: relative`) means it always sits exactly under
    whatever the bar currently renders as — the flush 64px header, the
    floating rounded pill once `.scrolled` adds its own padding-top and
-   shrinks `.top` to 56px, either of those plus a 42px subbar — with no JS
+   shrinks `.top` to 56px — with no JS
    measurement and no jank on scroll, since it rides along with `.top`'s
    own sticky position the same way `.top` already does.
 

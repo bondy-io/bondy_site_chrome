@@ -21,7 +21,7 @@ costs a version bump and a redeploy in each repo rather than a coupled build.
 ```jsonc
 // package.json
 "dependencies": {
-  "@bondy/site-chrome": "git+https://github.com/bondy-io/bondy_site_chrome.git#v0.1.0"
+  "@bondy/site-chrome": "git+https://github.com/bondy-io/bondy_site_chrome.git#v0.9.8"
 }
 ```
 
@@ -36,7 +36,7 @@ tarball instead, which is what the git install produces anyway:
 
 ```sh
 cd bondy_site_chrome && npm pack
-cd ../bondy_website && npm install ../bondy_site_chrome/bondy-site-chrome-0.1.0.tgz
+cd ../bondy_website && npm install ../bondy_site_chrome/bondy-site-chrome-<version>.tgz
 ```
 
 `yarn` copies `file:` dependencies rather than symlinking them, so
@@ -60,13 +60,12 @@ import './brand.css'   // site-specific, loaded after
 
 ```vue
 <script setup>
-import { SiteNav, SiteFooter } from '@bondy/site-chrome'
+import { SiteNav, SiteFooter, SiteSearch } from '@bondy/site-chrome'
 </script>
 
 <template>
-  <SiteNav active="docs" layout="docs">
-    <template #search><VPNavBarSearch /></template>
-    <template #subbar><Breadcrumb /><VersionPicker /></template>
+  <SiteNav active="docs" self="docs" layout="docs">
+    <template #search><SiteSearch self="docs" /></template>
   </SiteNav>
 </template>
 ```
@@ -76,15 +75,21 @@ import { SiteNav, SiteFooter } from '@bondy/site-chrome'
 | prop | default | |
 |---|---|---|
 | `active` | `''` | id from `SITE_LINKS` marking which section this site is |
-| `layout` | `'sticky'` | `sticky` scrolls with the page; `docs` replaces VitePress's `VPNav` |
+| `self` | `'website'` | which property this site is (an `ORIGINS` key); links to it stay relative |
+| `layout` | `'sticky'` | `sticky` for a site with its own layout; `docs` replaces VitePress's `VPNav` |
 | `github` | org URL | GitHub link target |
 
-Slots: `search`, `cta`, `subbar`, `mobileExtra`.
+Slots: `search`, `cta`, `mobileExtra`. The bar is one row; page-level context
+such as a breadcrumb or version picker belongs with the page.
 
-`layout="docs"` also declares `--vp-nav-height` (64px, or 106px when the
-`subbar` slot is filled) so every VitePress offset stays correct, and hides
-`VPNav`. Both are driven off the rendered markup with `:has()`, so a docs site
-never hand-maintains the number.
+Both layouts behave the same way on screen. At 1025px and wider the bar starts
+transparent and full width, and once the page scrolls past 50px it floats as a
+blurred, rounded pill. At 1024px and below it is a fixed, full-width glass bar,
+with the links in a burger drawer below 1150px.
+
+`layout="docs"` also declares `--vp-nav-height` as 64px and hides `VPNav`, so
+every VitePress offset (sidebar, content, local nav) stays correct. The pill
+floats inside a fixed box, so that height does not change on scroll.
 
 ### `<SiteSearch>`
 
@@ -101,7 +106,7 @@ each bundle separately puts it back at #1.
 
 | prop | default | |
 |---|---|---|
-| `primary` | `'/pagefind/'` | this deploy's bundle — listed first |
+| `self` | `'website'` | which property this site is; its own bundle is relative and listed first |
 | `bundles` | `SEARCH_BUNDLES` | every bundle to query |
 | `perGroup` | `5` | results shown per deploy |
 

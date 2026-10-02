@@ -12,9 +12,8 @@
  *   import { SiteNav, SiteFooter } from '@bondy/site-chrome'
  *   import '@bondy/site-chrome/styles/chrome.css'
  *
- *   <SiteNav active="docs" layout="docs">
- *     <template #search><VPNavBarSearch /></template>
- *     <template #subbar><Breadcrumb /></template>
+ *   <SiteNav active="docs" self="docs" layout="docs">
+ *     <template #search><SiteSearch self="docs" /></template>
  *   </SiteNav>
  */
 export { default as SiteNav } from './SiteNav.vue'
