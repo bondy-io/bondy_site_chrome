@@ -36,7 +36,7 @@
   --tk-s: #cbb375;
   --line: #c9c5bf;
   --line-2: #dcd8d2;
-  --f: 'Inter', system-ui, -apple-system, sans-serif;
+  --f: 'Inter', 'Inter Fallback', system-ui, -apple-system, sans-serif;
   --m: 'JetBrains Mono', ui-monospace, monospace;
 }
 
@@ -59,6 +59,90 @@ html.dark {
      stays dark in both themes. Flipping it blackened every diagram title. */
   --accent-ink: #0c0d0e;
   --blue-hover: #4dbf9f;
+}
+
+/* Arial scaled to Inter's metrics, one face per Inter weight the sites load,
+   so text laid out before Inter arrives wraps the same and the swap does not
+   shift the page (Lighthouse CLS on a bondy.io post page 0.155 -> 0; the
+   per-weight faces took the desktop home hero from 0.042 to 0.033 — one
+   paragraph there still re-wraps, which metric matching cannot rule out).
+   Values computed with fontTools from VitePress's variable
+   inter-roman-latin.woff2, instanced at wght 400/500/600 (opsz 14, the text
+   size), against Arial.ttf (400, 500) and Arial Bold.ttf (600): size-adjust
+   is the ratio of letter-frequency-weighted advance widths; the overrides are
+   Inter's typo metrics divided by it. `700` resolves to the 600 face. Where
+   Arial is absent (Android) these faces have no source and the stack falls
+   through to system-ui. */
+@font-face {
+  font-family: 'Inter Fallback';
+  font-weight: 400;
+  src: local('Arial'), local('ArialMT');
+  size-adjust: 107.33%;
+  ascent-override: 90.26%;
+  descent-override: 22.47%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Inter Fallback';
+  font-weight: 500;
+  src: local('Arial'), local('ArialMT');
+  size-adjust: 108.32%;
+  ascent-override: 89.43%;
+  descent-override: 22.27%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Inter Fallback';
+  font-weight: 600;
+  src: local('Arial Bold'), local('Arial-BoldMT');
+  size-adjust: 101.07%;
+  ascent-override: 95.85%;
+  descent-override: 23.87%;
+  line-gap-override: 0%;
+}
+
+/* ── VitePress theme tokens ───────────────────────────────── */
+/* Every Bondy site is VitePress, and VitePress components (the docs sidebar
+   and outline, code blocks, the template's widgets) read --vp-c-* rather
+   than the palette above. Mapping one onto the other here is what makes
+   those components wear the palette on every site without each one copying
+   the values. Three entries take a different palette step at night than by
+   day, so they are restated in the dark block.
+
+   The selectors outrank the template theme's own token defaults (`:root` and
+   `html.dark` in @leapsight/vitepress-template's vars.css) by specificity,
+   not by load order: `html:root` is (0,1,1) and `html:root.dark` (0,2,1), so
+   this mapping holds whichever stylesheet a site happens to import last. */
+html:root,
+html:root.dark {
+  --vp-c-brand-1: var(--blue);
+  --vp-c-brand-2: var(--blue-hover);
+  --vp-c-brand-3: var(--acc-l);
+  --vp-c-brand-soft: var(--soft);
+
+  --vp-c-bg: var(--paper);
+  --vp-c-bg-alt: var(--paper-2);
+  --vp-c-bg-elv: var(--paper);
+  --vp-c-bg-soft: var(--paper-2);
+  --vp-c-bg-mute: var(--paper-2);
+
+  --vp-c-divider: var(--line-2);
+  --vp-c-border: var(--line);
+  --vp-c-gutter: var(--line-2);
+
+  --vp-c-text-1: var(--ink);
+  --vp-c-text-2: var(--ink-2);
+  --vp-c-text-3: var(--ink-3);
+
+  --vp-sidebar-bg-color: var(--paper);
+
+  --vp-font-family-base: var(--f);
+  --vp-font-family-mono: var(--m);
+}
+html:root.dark {
+  --vp-c-brand-soft: rgba(95, 214, 180, 0.16);
+  --vp-c-bg-elv: var(--paper-2);
+  --vp-c-gutter: var(--paper);
 }
 
 /* ── chrome shell ─────────────────────────────────────────── */
@@ -495,6 +579,14 @@ html.dark .chrome-nav .mmenu .mm-theme .to-dark { display: none; }
   .chrome-nav .ccta { display: none; }
   .chrome-nav .mmenu .mm-cta { display: block; }
 }
+/* Small phones: a tighter bar — narrower side padding and gap, and a
+   smaller wordmark — so the logo, search, toggle and burger sit on one row
+   with room to spare at 375px. */
+@media (max-width: 540px) {
+  .chrome-nav .r { gap: 8px; }
+  .chrome-nav .top > .wrap { padding: 0 16px; }
+  .chrome-nav .lg { height: 33px; }
+}
 
 /* ── footer ───────────────────────────────────────────────── */
 .chrome-foot .tfoot { border-top: 1px solid var(--line); padding: 66px 0 34px; }
@@ -515,7 +607,12 @@ html.dark .chrome-nav .mmenu .mm-theme .to-dark { display: none; }
   list-style: none; display: flex; flex-direction: column; gap: 9px;
   font-size: 14px; color: var(--ink-2); margin: 0; padding: 0;
 }
-.chrome-foot .fb .lg { height: 28px; margin-bottom: 18px; }
+/* Larger than the nav's wordmark (40.5px, 33px on small phones): the footer
+   is the page's sign-off, not a bar, so the mark carries more weight there. */
+.chrome-foot .fb .lg { height: 56px; margin-bottom: 22px; }
+@media (max-width: 540px) {
+  .chrome-foot .fb .lg { height: 44px; }
+}
 .chrome-foot .fb p { font-size: 14px; color: var(--ink-2); max-width: 34ch; line-height: 1.5; }
 .chrome-foot .fbot {
   display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;

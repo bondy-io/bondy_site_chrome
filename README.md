@@ -21,7 +21,7 @@ costs a version bump and a redeploy in each repo rather than a coupled build.
 ```jsonc
 // package.json
 "dependencies": {
-  "@bondy/site-chrome": "git+https://github.com/bondy-io/bondy_site_chrome.git#v0.9.8"
+  "@bondy/site-chrome": "git+https://github.com/bondy-io/bondy_site_chrome.git#v0.9.9"
 }
 ```
 
@@ -125,6 +125,14 @@ anything one site alone needs. Those stay with the site.
 
 Palette tokens are declared on `:root`, not on a wrapper class, so existing
 page CSS that consumes `--paper` / `--ink` / `--blue` keeps working unchanged.
+
+The package also maps VitePress's theme tokens (`--vp-c-*`,
+`--vp-sidebar-bg-color`, `--vp-font-family-*`) onto that palette, and ships
+the metric-matched `Inter Fallback` faces in the `--f` stack, so VitePress and
+template components wear the palette on every site without a site copying
+the values. The mapping outranks the template theme's defaults by
+specificity, so it holds regardless of import order. A site's own stylesheet
+keeps only what that site alone needs.
 
 ## Notes
 
