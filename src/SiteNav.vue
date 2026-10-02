@@ -29,7 +29,7 @@
                           staying in flow so it needs no extra offset.
 -->
 <script setup>
-import { computed, ref, watch, onMounted, onBeforeUnmount, provide } from 'vue'
+import { computed, ref, watch, nextTick, onMounted, onBeforeUnmount, provide } from 'vue'
 import { useData, useRoute } from 'vitepress'
 import { resolveLinks, resolveHome, GITHUB } from './sitemap.js'
 import BondyWordmark from './BondyWordmark.vue'
@@ -141,14 +141,63 @@ const scrolled = ref(false)
 function updateScrolled() {
   scrolled.value = window.scrollY > 50
 }
+
+// Keyboard use of the drawer. While it is closed the template marks it
+// `inert`: it is only faded out (opacity, never display:none, so the fade
+// can run), and without `inert` its links stayed in the Tab order below
+// 1150px, focusable while invisible. While it is open, the bar and the
+// drawer are the only controls on screen (the drawer covers the page), so
+// focus moves into the drawer, Tab and Shift+Tab cycle through the visible
+// controls of the bar and the drawer, and Escape closes it and gives focus
+// back to the burger. The bar's search button opens the search sheet on
+// focus, and the sheet is teleported to <body>, so an open sheet's controls
+// join the cycle; Escape inside it is left to SiteSearch, which closes the
+// sheet first, and a second Escape closes the drawer.
+const header = ref(null)
+const burger = ref(null)
+const drawer = ref(null)
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+function visibleFocusables() {
+  const panel = document.querySelector('.csearch-panel')
+  return [header.value, panel]
+    .filter(Boolean)
+    .flatMap((root) => [...root.querySelectorAll(FOCUSABLE)])
+    .filter((el) => el.getClientRects().length > 0 && !el.closest('[inert]'))
+}
+function onKeydown(e) {
+  if (!open.value) return
+  if (e.key === 'Escape') {
+    if (e.target.closest?.('.csearch-panel')) return
+    open.value = false
+    burger.value?.focus()
+  } else if (e.key === 'Tab') {
+    // Every Tab is moved by hand, not only the ones at either end: the
+    // sheet sits at the end of <body>, so the browser's own order between
+    // the header and it runs through the whole page.
+    const els = visibleFocusables()
+    if (!els.length) return
+    e.preventDefault()
+    const i = els.indexOf(document.activeElement)
+    const next = i === -1 ? (e.shiftKey ? els.length - 1 : 0) : (i + (e.shiftKey ? -1 : 1) + els.length) % els.length
+    els[next].focus()
+  }
+}
+watch(open, async (v) => {
+  if (!v) return
+  await nextTick()
+  drawer.value?.querySelector(FOCUSABLE)?.focus({ preventScroll: true })
+})
+
 onMounted(() => {
   if (typeof window === 'undefined') return
   updateScrolled()
   window.addEventListener('scroll', updateScrolled, { passive: true })
+  document.addEventListener('keydown', onKeydown)
 })
 onBeforeUnmount(() => {
   if (typeof window === 'undefined') return
   window.removeEventListener('scroll', updateScrolled)
+  document.removeEventListener('keydown', onKeydown)
 })
 </script>
 
@@ -156,7 +205,7 @@ onBeforeUnmount(() => {
   <!-- <header>: the page's banner landmark, so the wordmark and the bar's
        icon links sit inside a landmark with the primary <nav> (axe `region`).
        Styled by class only, so the element change is invisible. -->
-  <header class="bondy-chrome chrome-nav" :class="[`chrome-nav--${layout}`, { scrolled }]">
+  <header ref="header" class="bondy-chrome chrome-nav" :class="[`chrome-nav--${layout}`, { scrolled }]">
     <div class="top">
       <div class="wrap">
         <a :href="homeHref" class="lg" aria-label="Bondy home"><BondyWordmark /></a>
@@ -187,9 +236,11 @@ onBeforeUnmount(() => {
           </button>
           <div v-if="$slots.cta" class="ccta"><slot name="cta" /></div>
           <button
+            ref="burger"
             class="mbtn"
             type="button"
             :aria-expanded="open"
+            aria-controls="chrome-mmenu"
             aria-label="Menu"
             @click="open = !open"
           >
@@ -211,7 +262,13 @@ onBeforeUnmount(() => {
          here, this drawer's `top: 64px; bottom: 0` would resolve against
          .top's own (64px-tall) box instead of the viewport and collapse to
          zero height. -->
-    <div class="mmenu" :class="{ open }">
+    <div
+      id="chrome-mmenu"
+      ref="drawer"
+      class="mmenu"
+      :class="{ open }"
+      :inert="open ? undefined : true"
+    >
       <div class="mm-scroll" @click="onMenuClick">
         <div class="wrap">
           <nav class="mm-primary">
