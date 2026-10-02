@@ -22,8 +22,9 @@
      Pagefind's assets only exist in built output, so under `vitepress dev`
      there is no bundle to load and the box says so instead of throwing. -->
 <script setup>
-import { ref, shallowRef, computed, onBeforeUnmount, onMounted, nextTick, inject } from 'vue'
+import { ref, shallowRef, computed, watch, onBeforeUnmount, onMounted, nextTick, inject } from 'vue'
 import { resolveBundles } from './sitemap.js'
+import { lockScroll, unlockScroll } from './scrollLock.js'
 
 const props = defineProps({
   /**
@@ -111,6 +112,11 @@ async function run() {
   })
   active.value = -1
   status.value = groups.value.length ? '' : 'No results.'
+  // A new query's first hit must be on screen: without this, a list the
+  // reader had scrolled for the previous query keeps its offset and the top
+  // result sits above the fold.
+  await nextTick()
+  if (resultsEl.value) resultsEl.value.scrollTop = 0
 }
 
 function onInput() {
@@ -142,12 +148,22 @@ function onKeydown(e) {
     const hit = flat.value[active.value]
     if (hit) window.location.href = hit.url
   }
+  else if (e.key === 'Enter' && isMobile.value) {
+    // The keyboard's "Search" key. Nothing is highlighted to open, so run the
+    // query now (skipping the debounce) and drop the keyboard: it is what
+    // covers the lower half of the sheet, so dismissing it is how a reader
+    // gets to see the full list.
+    e.preventDefault()
+    clearTimeout(timer)
+    run()
+    inputEl.value?.blur()
+  }
   else if (e.key === 'Escape') hide()
 }
 
 // A document-level listener drives outside-click-to-close at every width,
 // rather than a click handler on the backdrop itself: below 1024px
-// (chrome.css) the panel becomes a fixed bottom sheet with a dimmed
+// (chrome.css) the panel becomes a fixed top-anchored sheet with a dimmed
 // `.csearch-backdrop` behind it purely for visual/touch affordance, but
 // that backdrop still sits outside `panelEl`, so a tap on it reaches this
 // same listener and closes the sheet without any handler of its own.
@@ -170,8 +186,8 @@ function onDocClick(e) {
 // `backdrop-filter` (the glass bar), so the two shapes each escape it
 // differently:
 //
-// Below 1024px the panel is a `position: fixed` bottom sheet docked to the
-// true viewport edges, and it teleports to `<body>`. Per spec,
+// Below 1024px the panel is a `position: fixed` top-anchored sheet docked
+// under the header, and it teleports to `<body>`. Per spec,
 // `backdrop-filter` on an ancestor establishes the containing block for
 // `position: fixed` descendants the same way `transform` does, so nested
 // inside `.top` the sheet would anchor against the 64px bar instead of the
@@ -179,7 +195,7 @@ function onDocClick(e) {
 // inside `.chrome-nav`) matters too: everything under `.chrome-nav` is also
 // under the package-wide `.bondy-chrome * { margin: 0; padding: 0 }` reset
 // (and the marketing site's own `.torso *` one), which silently strips the
-// sheet's padding and the grabber's auto-centering — that's what "the
+// sheet's padding and side insets — that's what "the
 // mobile sheet looks like the desktop one / cramped" was.
 //
 // At 1025px+ the panel is `position: absolute` under the bar, which the
@@ -208,6 +224,54 @@ const teleportTarget = computed(() =>
   isMobile.value ? 'body' : (searchPortalEl?.value ?? null)
 )
 
+// While the mobile sheet is open (below 1024px only — the desktop panel is a
+// floating card and leaves the page alone):
+//
+// 1. Pin the page (scrollLock.js), the same way the burger drawer does. Left
+//    unpinned, the keyboard opening lets the browser pan or scroll the
+//    document behind the sheet to "reveal" the focused input.
+//
+// 2. Publish where the visible area ends as `--csearch-vv-bottom` on <html>,
+//    which chrome.css uses to cap the sheet's height. `vh`/`dvh` can't be
+//    used for this: on iOS Safari, and by default on Chrome for Android, the
+//    on-screen keyboard overlays the page WITHOUT shrinking the layout
+//    viewport, so those units still measure a screen with no keyboard and a
+//    sheet sized from them runs behind it. `visualViewport` is the one API
+//    that reports the region the reader can actually see. `offsetTop` is
+//    added because the visual viewport can be panned inside the layout one
+//    (pinch-zoom, or iOS nudging the view); CSS `top`/`max-height` here are
+//    in layout coordinates, so the visible bottom edge is offsetTop + height.
+//    Browsers without it fall back to the `100dvh` in the stylesheet.
+let vv = null
+function syncVisibleBottom() {
+  if (!vv) return
+  document.documentElement.style.setProperty('--csearch-vv-bottom', `${vv.offsetTop + vv.height}px`)
+}
+function bindMobileLayer() {
+  lockScroll(lockOwner)
+  vv = window.visualViewport ?? null
+  if (!vv) return
+  vv.addEventListener('resize', syncVisibleBottom)
+  vv.addEventListener('scroll', syncVisibleBottom)
+  syncVisibleBottom()
+}
+function releaseMobileLayer() {
+  if (vv) {
+    vv.removeEventListener('resize', syncVisibleBottom)
+    vv.removeEventListener('scroll', syncVisibleBottom)
+    vv = null
+  }
+  if (typeof document !== 'undefined') {
+    document.documentElement.style.removeProperty('--csearch-vv-bottom')
+  }
+  unlockScroll(lockOwner)
+}
+const lockOwner = Symbol('search')
+// Runs before the render that mounts the sheet (default `pre` flush), i.e.
+// before `show()` focuses the input — the page is already pinned when the
+// keyboard starts to open, not after.
+watch([open, isMobile], ([o, m]) => (o && m ? bindMobileLayer() : releaseMobileLayer()))
+
 // The HTML `autofocus` attribute is unreliable on an element that appears
 // via `v-if` inside a `<Transition>`: Vue moves/clones nodes during the
 // transition's own DOM dance, and whether the attribute still "counts" as
@@ -220,7 +284,10 @@ async function show() {
   if (open.value) return
   open.value = true
   await nextTick()
-  inputEl.value?.focus()
+  // `preventScroll`: without it the browser scrolls the page to bring the
+  // freshly-mounted input into view, which is the "page jumps when I tap
+  // search" bug. The sheet is already where the reader can see it.
+  inputEl.value?.focus({ preventScroll: true })
   document.addEventListener('mousedown', onDocClick)
   await ensureLoaded()
 }
@@ -249,6 +316,7 @@ onBeforeUnmount(() => {
   clearTimeout(timer)
   document.removeEventListener('mousedown', onDocClick)
   mql?.removeEventListener('change', syncIsMobile)
+  releaseMobileLayer()
 })
 </script>
 
@@ -275,7 +343,7 @@ onBeforeUnmount(() => {
        scrim are always DOM siblings. -->
   <Teleport :to="teleportTarget" :disabled="!teleportTarget">
     <!-- Mobile/tablet only (chrome.css hides it above 1024px): a dimmed
-         scrim behind the bottom sheet. Deliberately plain opacity, no blur —
+         scrim behind the sheet. Deliberately plain opacity, no blur —
          see the note on `.csearch-panel` in chrome.css about why a blurred
          layer can't also be the one that slides. -->
     <Transition name="csearch-backdrop">
@@ -284,12 +352,12 @@ onBeforeUnmount(() => {
 
     <Transition name="csearch">
       <div v-if="open" ref="panelEl" class="csearch-panel" role="dialog" aria-label="Search">
-        <div class="csearch-grabber" aria-hidden="true" />
         <div class="csearch-head">
           <input
             ref="inputEl"
             v-model="term"
             type="search"
+            enterkeyhint="search"
             placeholder="Search all Bondy documentation…"
             aria-label="Search"
             role="combobox"
