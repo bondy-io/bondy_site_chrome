@@ -144,7 +144,8 @@ html:root.dark {
      (@leapsight/vitepress-template's CODE GROUPS block) wears the plate's
      shape — 20px corners, 40px apart from the prose — with its tab strip set
      as the plate header: mono, 13px, tracked and upper-cased, its labels
-     inset to the plate's 26px, the active one ruled in mint. */
+     inset to the plate's 28px, the selected one in a capsule of paper at
+     10% with an 18% hairline, the plate's own tint and rule. */
   --vp-code-block-bg: var(--plate);
   --vp-code-block-color: var(--blue-ink);
   --vp-code-block-divider-color: rgba(241, 239, 236, 0.18);
@@ -155,11 +156,10 @@ html:root.dark {
   --vp-code-tab-text-color: rgba(241, 239, 236, 0.58);
   --vp-code-tab-hover-text-color: var(--blue-ink);
   --vp-code-tab-active-text-color: var(--blue-ink);
-  --vp-code-tab-active-bar-color: var(--acc-d);
   --ls-code-radius: 20px;
   --ls-code-margin: 40px 0;
-  --ls-code-tab-padding: 0 14px;
-  --ls-code-tab-height: 52px;
+  --ls-code-tab-padding: 10px 14px;
+  --ls-code-tab-height: 32px;
   --ls-code-tab-font: var(--m);
   --ls-code-tab-font-size: 13px;
   --ls-code-tab-weight: 400;
