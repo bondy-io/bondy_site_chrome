@@ -138,11 +138,40 @@ html:root.dark {
 
   --vp-font-family-base: var(--f);
   --vp-font-family-mono: var(--m);
+
+  /* Code is the plate: dark in both themes, inked in --blue-ink, its labels
+     and furniture in paper at 58% (5.2:1 on the plate) and 8%. A code group
+     (@leapsight/vitepress-template's CODE GROUPS block) wears the plate's
+     shape — 20px corners, 40px apart from the prose — with its tab strip set
+     as the plate header: mono, 13px, tracked and upper-cased, its labels
+     inset to the plate's 26px, the active one ruled in mint. */
+  --vp-code-block-bg: var(--plate);
+  --vp-code-block-color: var(--blue-ink);
+  --vp-code-block-divider-color: rgba(241, 239, 236, 0.18);
+  --vp-code-line-number-color: rgba(241, 239, 236, 0.58);
+  --vp-code-lang-color: rgba(241, 239, 236, 0.58);
+  --vp-code-copy-code-bg: rgba(241, 239, 236, 0.08);
+  --vp-code-copy-code-hover-bg: rgba(241, 239, 236, 0.08);
+  --vp-code-tab-text-color: rgba(241, 239, 236, 0.58);
+  --vp-code-tab-hover-text-color: var(--blue-ink);
+  --vp-code-tab-active-text-color: var(--blue-ink);
+  --vp-code-tab-active-bar-color: var(--acc-d);
+  --ls-code-radius: 20px;
+  --ls-code-margin: 40px 0;
+  --ls-code-tab-padding: 0 14px;
+  --ls-code-tab-height: 52px;
+  --ls-code-tab-font: var(--m);
+  --ls-code-tab-font-size: 13px;
+  --ls-code-tab-weight: 400;
+  --ls-code-tab-tracking: 0.1em;
+  --ls-code-tab-transform: uppercase;
 }
 html:root.dark {
   --vp-c-brand-soft: rgba(95, 214, 180, 0.16);
   --vp-c-bg-elv: var(--paper-2);
   --vp-c-gutter: var(--paper);
+  /* At night the plate sits on a near-black page, so it takes a hairline. */
+  --ls-code-border: 1px solid var(--line);
 }
 
 /* ── chrome shell ─────────────────────────────────────────── */
