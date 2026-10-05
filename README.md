@@ -21,7 +21,7 @@ costs a version bump and a redeploy in each repo rather than a coupled build.
 ```jsonc
 // package.json
 "dependencies": {
-  "@bondy/site-chrome": "git+https://github.com/bondy-io/bondy_site_chrome.git#v0.9.13"
+  "@bondy/site-chrome": "git+https://github.com/bondy-io/bondy_site_chrome.git#v0.9.14"
 }
 ```
 

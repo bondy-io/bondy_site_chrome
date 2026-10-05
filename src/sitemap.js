@@ -63,13 +63,13 @@ export const SITE_LINKS = [
 /**
  * Documentation sets, for the portal index on developer.bondy.io.
  *
- * The router and protocol sets live on the docs host itself; the language
- * docs are generated from Bondy source and deploy separately.
+ * The Bondy Connect set lives on the docs host itself; the language docs are
+ * generated from Bondy source and deploy separately.
  *
- * The protocol is a set of its own because its reader is not the router's:
- * someone writing a WAMP component does not need to know how Bondy is
- * configured or operated. It is also where BAMP will slot in, as a fourth
- * entry and no other change.
+ * Using a protocol with Bondy (WAMP, HTTP/REST, MCP, BAMP) is documented
+ * inside the Bondy Connect set, because realms, URIs, authentication and RBAC
+ * are shared by every interface. The 'protocol' group is for protocol
+ * specifications, which have their own readers and versioning.
  */
 export const DOC_SETS = [
   {
@@ -86,18 +86,10 @@ export const DOC_SETS = [
   {
     id: 'fabric-docs',
     text: 'Bondy Connect',
-    blurb: 'Run, configure and operate the application networking platform.',
+    blurb: 'Build on, run and operate the application networking platform, over WAMP, HTTP/REST or MCP.',
     group: 'platform',
     site: 'docs',
     path: '/router'
-  },
-  {
-    id: 'wamp-docs',
-    text: 'WAMP',
-    blurb: 'The Web Application Messaging Protocol: routed remote procedure calls and publish/subscribe over one connection. For developers writing WAMP components.',
-    group: 'protocol',
-    site: 'docs',
-    path: '/wamp'
   }
 ]
 
