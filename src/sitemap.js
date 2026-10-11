@@ -177,4 +177,3 @@ export function resolveBundles(self = 'website') {
 export const GITHUB = 'https://github.com/bondy-io'
 export const GITHUB_ROUTER = 'https://github.com/bondy-io/bondy'
 export const LEAPSIGHT = 'https://leapsight.com'
-export const LICENSE = 'https://www.apache.org/licenses/LICENSE-2.0'

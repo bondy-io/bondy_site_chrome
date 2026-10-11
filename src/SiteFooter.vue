@@ -11,7 +11,7 @@
      footer is a sibling of VitePress's Layout rather than inside its content
      column. -->
 <script setup>
-import { LEAPSIGHT, LICENSE } from './sitemap.js'
+import { LEAPSIGHT } from './sitemap.js'
 import BondyWordmark from './BondyWordmark.vue'
 
 defineProps({
@@ -19,7 +19,7 @@ defineProps({
   columns: { type: Array, default: () => [] },
   blurb: { type: String, default: '' },
   /** Right-hand note on the bottom rule. */
-  note: { type: String, default: 'Apache-2.0 · built on the BEAM' },
+  note: { type: String, default: 'Built on the BEAM' },
   layout: { type: String, default: 'sticky' },
   year: { type: Number, default: () => new Date().getFullYear() }
 })
@@ -46,9 +46,8 @@ defineProps({
           <slot name="extra" />
         </div>
         <div class="fbot">
-          <span>© {{ year }} — <a :href="LEAPSIGHT">Leapsight</a> · Bondy contributors</span>
-          <span>{{ note }}</span>
-          <span><a :href="LICENSE">License</a></span>
+          <span>© {{ year }} — <a :href="LEAPSIGHT">Leapsight Technologies Limited</a> · Bondy contributors</span>
+          <span v-if="note">{{ note }}</span>
         </div>
       </div>
     </footer>
