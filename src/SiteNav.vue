@@ -8,10 +8,10 @@
      Context row (optional, the #context slot): a second row under the
      primary one, for what a property's reader needs to keep in view on
      every page, such as the documentation set being read, its sections and
-     its version. A bar with a context row never floats into the scrolled
-     pill described in chrome.css, because the pill would detach the primary
-     row from the row under it. Page-level context, such as a breadcrumb,
-     still belongs with the page.
+     its version. When the page scrolls, the two rows float together as one
+     card (the scrolled pill described in chrome.css, with the context row as
+     its lower half), so neither comes loose from the other. Page-level
+     context, such as a breadcrumb, still belongs with the page.
      Under 1149px the row collapses into a full-screen burger drawer; under
      768px the drawer also absorbs the CTA from the header row, since it
      doesn't fit beside the logo and toggle at phone widths. Search stays in
@@ -219,7 +219,7 @@ onBeforeUnmount(() => {
   <header
     ref="header"
     class="bondy-chrome chrome-nav"
-    :class="[`chrome-nav--${layout}`, { scrolled: scrolled && !$slots.context, 'has-ctx': !!$slots.context }]"
+    :class="[`chrome-nav--${layout}`, { scrolled, 'has-ctx': !!$slots.context }]"
   >
     <div class="top">
       <div class="wrap">

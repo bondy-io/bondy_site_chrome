@@ -423,6 +423,53 @@ html .vp-doc div[class*='language-'] pre span {
   }
   :is(.chrome-nav--sticky, .chrome-nav--docs).scrolled .top nav.primary { gap: 20px; }
   :is(.chrome-nav--sticky, .chrome-nav--docs).scrolled .top .r { gap: 14px; }
+
+  /* The two-row card. With a context row, the pill takes both rows: the
+     primary row is the card's upper half and the context row its lower
+     half, sharing one width, one glass surface and one shadow, so the
+     rows float as a unit instead of the primary row detaching. The context
+     row tracks the primary row's width and max-width through the same
+     transition, so the two halves shrink in step. */
+  .chrome-nav.has-ctx .ctx {
+    margin: 0 auto; width: 100%; max-width: 100vw;
+    background: transparent;
+    transition:
+      background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+      border-radius 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+      width 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+      max-width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .chrome-nav.has-ctx .ctx { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  }
+  .chrome-nav.has-ctx .ctx > .wrap { transition: padding 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+
+  /* Each half keeps the pill's shadow, clipped where the halves meet, so
+     the shadow runs round the whole card without either half casting it
+     across the other. */
+  .chrome-nav.has-ctx.scrolled .top {
+    border-radius: 18px 18px 0 0;
+    border-bottom-color: var(--line-2);
+    clip-path: inset(-48px -48px 0 -48px);
+  }
+  .chrome-nav.has-ctx.scrolled .ctx {
+    width: calc(100% - 48px);
+    max-width: 1180px;
+    border-radius: 0 0 18px 18px;
+    border-bottom-color: var(--line);
+    background: color-mix(in srgb, var(--paper) 65%, transparent);
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.14);
+    clip-path: inset(0 -48px -48px -48px);
+  }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .chrome-nav.has-ctx.scrolled .ctx {
+      backdrop-filter: blur(18px) saturate(160%);
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+    }
+  }
+  .chrome-nav.has-ctx.scrolled .ctx > .wrap { padding-left: 28px; padding-right: 28px; }
 }
 
 /* Belt and braces: if a viewport crosses the 1024px line while `.scrolled`
@@ -431,6 +478,9 @@ html .vp-doc div[class*='language-'] pre span {
 @media (max-width: 1024px) {
   :is(.chrome-nav--sticky, .chrome-nav--docs).scrolled { padding-top: 0; }
   :is(.chrome-nav--sticky, .chrome-nav--docs).scrolled .top {
+    width: 100%; max-width: none; border-radius: 0; box-shadow: none;
+  }
+  .chrome-nav.has-ctx.scrolled .ctx {
     width: 100%; max-width: none; border-radius: 0; box-shadow: none;
   }
 }
@@ -446,17 +496,24 @@ html .vp-doc div[class*='language-'] pre span {
 }
 
 /* ── context row (SiteNav's #context slot) ──
-   A solid header block: with a second row the bar never floats (see
-   SiteNav.vue), so the primary row keeps an opaque fill at every scroll
-   position instead of the desktop's transparent-until-scrolled look. The
-   slot's content styles itself; this only gives it a row. */
-.chrome-nav.has-ctx .top {
-  background: var(--paper);
-  border-bottom-color: var(--line-2);
-  backdrop-filter: none; -webkit-backdrop-filter: none;
+   The row wears the primary row's surface: the same glass at 1024px and
+   below, and above that the same transparent-until-scrolled look, after
+   which both rows float together as one card (see "the two-row card" in
+   the pill block). The slot's content styles itself; this only gives it a
+   row. */
+.chrome-nav .ctx {
+  position: relative; box-sizing: border-box;
+  background: var(--paper); border-bottom: 1px solid var(--line);
 }
-.chrome-nav .ctx { background: var(--paper); border-bottom: 1px solid var(--line); }
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .chrome-nav .ctx {
+    background: color-mix(in srgb, var(--paper) 65%, transparent);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+  }
+}
 .chrome-nav .ctx > .wrap { display: flex; align-items: center; height: 44px; }
+.chrome-nav.has-ctx .top { border-bottom-color: var(--line-2); }
 
 .chrome-nav .ghlink,
 .chrome-nav .tbtn {
@@ -724,15 +781,16 @@ html.dark .chrome-nav .mmenu .mm-theme .to-dark { display: none; }
   :root:has(.chrome-nav--docs.has-ctx) { --vp-nav-height: 109px; }
 }
 
-/* A docs footer is a sibling of VitePress's Layout, not inside its content
-   column, so it clears the sidebar the same way the content does. */
+/* A docs footer spans the page on the same grid as the docs bar, so its
+   wordmark sits under the bar's. It used to clear the sidebar with a left
+   offset instead, which lined it up with nothing: not the bar, not the
+   content column, and it kept the offset on pages that have no sidebar.
+   It is a sibling of VitePress's Layout, after the content, so stacking it
+   above the fixed sidebar (z-index 50, above) and below the fixed bar (60)
+   lets it scroll up over the sidebar's foot at the end of a page. */
 @media (min-width: 960px) {
-  .chrome-foot--docs { padding-left: var(--vp-sidebar-width); }
-}
-@media (min-width: 1440px) {
-  .chrome-foot--docs {
-    padding-left: calc((100vw - var(--vp-layout-max-width)) / 2 + var(--vp-sidebar-width));
-  }
+  .chrome-foot--docs { position: relative; z-index: 55; background: var(--paper); }
+  .chrome-foot.chrome-foot--docs .wrap { max-width: var(--vp-layout-max-width); padding: 0 32px; }
 }
 
 /* ── site-wide search (SiteSearch.vue) ────────────────────── */
