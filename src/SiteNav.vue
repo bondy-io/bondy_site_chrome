@@ -1,9 +1,17 @@
 <!-- The Bondy top bar, worn by every Bondy property.
      
      Primary row: wordmark · the canonical site sections (see sitemap.js) ·
-     search, GitHub, night toggle and an optional call-to-action. One row
-     only: page-level context such as a breadcrumb or a version picker
-     belongs with the page, not in the site-wide bar.
+     search, GitHub, night toggle and an optional call-to-action. This row is
+     the same on every property and holds nothing else: context belongs to
+     the site that has it.
+
+     Context row (optional, the #context slot): a second row under the
+     primary one, for what a property's reader needs to keep in view on
+     every page, such as the documentation set being read, its sections and
+     its version. A bar with a context row never floats into the scrolled
+     pill described in chrome.css, because the pill would detach the primary
+     row from the row under it. Page-level context, such as a breadcrumb,
+     still belongs with the page.
      Under 1149px the row collapses into a full-screen burger drawer; under
      768px the drawer also absorbs the CTA from the header row, since it
      doesn't fit beside the logo and toggle at phone widths. Search stays in
@@ -16,6 +24,9 @@
 
        #search   the site's own search box (Algolia, Pagefind, ...)
        #cta      a call-to-action pill
+       #context  the context row described above; omit the slot (not just
+                 its content) on pages that have no context, or the row
+                 renders empty
 
      `layout` picks how the bar sits:
 
@@ -205,7 +216,11 @@ onBeforeUnmount(() => {
   <!-- <header>: the page's banner landmark, so the wordmark and the bar's
        icon links sit inside a landmark with the primary <nav> (axe `region`).
        Styled by class only, so the element change is invisible. -->
-  <header ref="header" class="bondy-chrome chrome-nav" :class="[`chrome-nav--${layout}`, { scrolled }]">
+  <header
+    ref="header"
+    class="bondy-chrome chrome-nav"
+    :class="[`chrome-nav--${layout}`, { scrolled: scrolled && !$slots.context, 'has-ctx': !!$slots.context }]"
+  >
     <div class="top">
       <div class="wrap">
         <a :href="homeHref" class="lg" aria-label="Bondy home"><BondyWordmark /></a>
@@ -249,6 +264,10 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
+    </div>
+
+    <div v-if="$slots.context" class="ctx">
+      <div class="wrap"><slot name="context" /></div>
     </div>
 
     <!-- See the comment on `searchPortal` above — SiteSearch teleports its

@@ -445,6 +445,19 @@ html .vp-doc div[class*='language-'] pre span {
   gap: 20px; font-size: 16px; color: var(--ink-2);
 }
 
+/* ── context row (SiteNav's #context slot) ──
+   A solid header block: with a second row the bar never floats (see
+   SiteNav.vue), so the primary row keeps an opaque fill at every scroll
+   position instead of the desktop's transparent-until-scrolled look. The
+   slot's content styles itself; this only gives it a row. */
+.chrome-nav.has-ctx .top {
+  background: var(--paper);
+  border-bottom-color: var(--line-2);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.chrome-nav .ctx { background: var(--paper); border-bottom: 1px solid var(--line); }
+.chrome-nav .ctx > .wrap { display: flex; align-items: center; height: 44px; }
+
 .chrome-nav .ghlink,
 .chrome-nav .tbtn {
   display: flex; align-items: center; justify-content: center;
@@ -693,8 +706,23 @@ html.dark .chrome-nav .mmenu .mm-theme .to-dark { display: none; }
   :root:has(.chrome-nav--docs) { --vp-nav-height: 64px; }
 }
 :root:has(.chrome-nav--docs) .VPNav { display: none; }
+/* VitePress's sidebar curtain hides links scrolling under the bar, but its
+   sticky offset is a literal -64px, written for VPNav's own height. Any
+   taller bar (one with a context row) left the curtain covering the top of
+   the sidebar. Tie the offset to the declared bar height instead. */
+:root:has(.chrome-nav--docs) .VPSidebar .curtain { top: calc(var(--vp-nav-height) * -1); }
 /* The sidebar must sit above the fixed bar's shadow. */
 :root:has(.chrome-nav--docs) .VPSidebar { z-index: 50; }
+
+/* The docs bar lines up with VitePress's own layout grid, so the wordmark
+   sits directly above the sidebar's left edge. VitePress pins the sidebar at
+   32px from the viewport edge and, from 1440px, centres a
+   --vp-layout-max-width layout; a wrap of that width with 32px gutters
+   starts at the same x at every width. */
+@media (min-width: 960px) {
+  .chrome-nav.chrome-nav--docs .wrap { max-width: var(--vp-layout-max-width); padding: 0 32px; }
+  :root:has(.chrome-nav--docs.has-ctx) { --vp-nav-height: 109px; }
+}
 
 /* A docs footer is a sibling of VitePress's Layout, not inside its content
    column, so it clears the sidebar the same way the content does. */
